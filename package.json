@@ -1,0 +1,18 @@
+{
+  "name": "kod-tezgahi",
+  "version": "1.0.0",
+  "description": "Kod araçları: pano, JSON/XML biçimlendirme, güzelleştirme, ağaç, karşılaştırma",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "js-beautify": "^1.15.4",
+    "sql-formatter": "^15.6.6"
+  },
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=20"
+  }
+}

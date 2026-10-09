@@ -1,0 +1,1379 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>Kod Tezgâhı</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232f43b8'/%3E%3Cpath d='M12 10l-6 6 6 6M20 10l6 6-6 6' stroke='white' stroke-width='3' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one working bench. Tab strip of tool groups, then each tool as input pane(s) beside output, diff results full width below. */
+:root{
+  --bg:#f2f3f6; --panel:#ffffff; --sunken:#eaecf1; --line:#d8dbe4; --fg:#1a1e29; --muted:#5b6274;
+  --accent:#2f43b8; --accent-ink:#ffffff; --accent-soft:#e6e9fa;
+  --add-bg:#e2f3e6; --add-fg:#16623a; --add-strong:#b4e2c1;
+  --del-bg:#fbe6e6; --del-fg:#9a2125; --del-strong:#f2b8b8;
+  --chg-bg:#fcf0d8; --chg-fg:#8a5200;
+  --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --display:"Bricolage Grotesque","IBM Plex Sans",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#11131a; --panel:#181b24; --sunken:#0e1016; --line:#2a2e3b; --fg:#e3e6ee; --muted:#99a0b2;
+  --accent:#8e9cff; --accent-ink:#0c0f1e; --accent-soft:#232848;
+  --add-bg:#12301f; --add-fg:#83dba0; --add-strong:#1f5434;
+  --del-bg:#3a1618; --del-fg:#ff9d9d; --del-strong:#6b2328;
+  --chg-bg:#3a2a0f; --chg-fg:#f2b75c; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#11131a; --panel:#181b24; --sunken:#0e1016; --line:#2a2e3b; --fg:#e3e6ee; --muted:#99a0b2;
+  --accent:#8e9cff; --accent-ink:#0c0f1e; --accent-soft:#232848;
+  --add-bg:#12301f; --add-fg:#83dba0; --add-strong:#1f5434;
+  --del-bg:#3a1618; --del-fg:#ff9d9d; --del-strong:#6b2328;
+  --chg-bg:#3a2a0f; --chg-fg:#f2b75c; color-scheme:dark}
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 var(--sans)}
+[hidden]{display:none!important}
+*{box-sizing:border-box}
+.tree{font:13px/1.6 var(--mono);padding:10px 12px;overflow:auto;height:52vh;min-height:300px}
+.tree details{margin-left:0}
+.tree details>div.kids{margin-left:18px;border-left:1px solid var(--line);padding-left:8px}
+.tree summary{cursor:pointer;list-style:none;display:flex;gap:6px;align-items:baseline;border-radius:4px;padding:0 4px}
+.tree summary::-webkit-details-marker{display:none}
+.tree summary::before{content:"▸";color:var(--muted);width:1em;flex:none;display:inline-block}
+.tree details[open]>summary::before{content:"▾"}
+.tree .leaf{display:flex;gap:6px;align-items:baseline;padding:0 4px 0 calc(4px + 1em + 6px);border-radius:4px;cursor:pointer}
+.tree summary:hover,.tree .leaf:hover{background:var(--sunken)}
+.tree .sel{background:var(--accent-soft)!important}
+.tree .k{color:var(--accent);white-space:nowrap}
+.tree .v{word-break:break-all}
+.tree .v.s{color:var(--add-fg)} .tree .v.n{color:var(--chg-fg)} .tree .v.b,.tree .v.z{color:var(--del-fg)}
+.tree .meta{color:var(--muted);font-size:.78rem;white-space:nowrap}
+.tree .more{margin:4px 0 4px 22px}
+.pathbar{display:flex;gap:8px;align-items:center;padding:7px 12px;border-top:1px solid var(--line);font:12.5px var(--mono);min-width:0}
+.pathbar code{flex:1;min-width:0;overflow-x:auto;white-space:nowrap;color:var(--fg)}
+.pathbar .btn{padding:3px 9px;font-size:.8rem;font-family:var(--sans)}
+.wrap{max-width:1440px;margin:0 auto;padding-inline:clamp(16px,3vw,32px);padding-block:20px 56px}
+header.top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 24px;flex-wrap:wrap}
+.brand h1{font-family:var(--display);font-size:1.75rem;line-height:1.1;letter-spacing:-.015em;margin:0}
+.brand p{margin:4px 0 0;color:var(--muted);font-size:.92rem;max-width:62ch}
+.pill{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:.82rem;color:var(--muted);white-space:nowrap}
+.pill i{width:8px;height:8px;border-radius:50%;background:var(--muted);display:inline-block}
+.pill.cloud i{background:var(--add-fg)} .pill.local i{background:var(--chg-fg)}
+nav.tabs{display:flex;align-items:stretch;gap:2px;overflow-x:auto;border-bottom:1px solid var(--line);margin-block:18px 18px;scrollbar-width:thin}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;margin-bottom:-1px;padding:10px 12px;color:var(--muted);font:500 .92rem var(--sans);cursor:pointer;white-space:nowrap}
+.tab:hover{color:var(--fg)}
+.tab[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent)}
+.tabsep{width:1px;background:var(--line);margin:10px 8px;flex:none}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 10px;align-items:center;margin-bottom:12px}
+.toolbar .grow{flex:1}
+.btn{font:500 .87rem var(--sans);padding:7px 12px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--del-fg)}
+.btn.armed{background:var(--del-fg);color:var(--panel);border-color:var(--del-fg)}
+.btn:disabled{opacity:.5;cursor:default}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{border:0;border-radius:0;background:var(--panel);color:var(--muted);font:500 .85rem var(--sans);padding:6px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent-soft);color:var(--fg)}
+.check{display:inline-flex;gap:6px;align-items:center;font-size:.87rem;color:var(--muted);cursor:pointer}
+select,input[type="search"],input[type="text"]{font:.88rem var(--sans);padding:6px 9px;border:1px solid var(--line);border-radius:6px;background:var(--panel);color:var(--fg)}
+.btn:focus-visible,.tab:focus-visible,.seg button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible,.snip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.panes{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+@media (max-width:780px){.panes{grid-template-columns:minmax(0,1fr)}}
+.pane{display:flex;flex-direction:column;min-width:0;border:1px solid var(--line);border-radius:8px;background:var(--panel);overflow:hidden}
+.pane-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 12px;border-bottom:1px solid var(--line);font-size:.74rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em}
+.pane-head .acts{display:flex;gap:6px;text-transform:none;letter-spacing:0}
+.pane-head .acts .btn{padding:3px 9px;font-size:.8rem}
+.chip{display:inline-block;padding:1px 8px;border-radius:999px;background:var(--sunken);color:var(--muted);font:500 .72rem var(--sans);letter-spacing:.02em;text-transform:none}
+.chip.example{background:var(--chg-bg);color:var(--chg-fg)}
+textarea.code{display:block;width:100%;min-height:300px;height:44vh;resize:vertical;border:0;margin:0;padding:12px 14px;font:13px/1.55 var(--mono);background:var(--panel);color:var(--fg);tab-size:2;white-space:pre;overflow:auto}
+textarea.code.short{height:22vh;min-height:150px}
+textarea.code[readonly]{background:var(--sunken)}
+textarea.code.dragging{background:var(--accent-soft)}
+.pane-foot{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;padding:5px 12px;border-top:1px solid var(--line);font:12px var(--mono);color:var(--muted);font-variant-numeric:tabular-nums}
+.status{margin-top:12px;padding:9px 13px;border-radius:7px;font-size:.9rem;background:var(--sunken);color:var(--muted)}
+.status.ok{background:var(--add-bg);color:var(--add-fg)}
+.status.err{background:var(--del-bg);color:var(--del-fg)}
+.status pre{margin:8px 0 0;font:12.5px/1.5 var(--mono);white-space:pre;overflow-x:auto;color:var(--fg)}
+.status .btn{margin-left:8px;padding:2px 8px;font-size:.8rem}
+.result{margin-top:16px;display:flex;flex-direction:column;gap:10px}
+.sumrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.count{display:inline-flex;gap:6px;align-items:baseline;padding:4px 11px;border-radius:999px;font-size:.85rem;font-variant-numeric:tabular-nums}
+.count b{font-weight:600}
+.count.add{background:var(--add-bg);color:var(--add-fg)} .count.del{background:var(--del-bg);color:var(--del-fg)} .count.chg{background:var(--chg-bg);color:var(--chg-fg)}
+.diffbox{overflow-x:auto;border:1px solid var(--line);border-radius:8px;background:var(--panel);max-height:70vh;overflow-y:auto}
+table.diff{width:100%;min-width:640px;border-collapse:collapse;table-layout:fixed;font:12.5px/1.55 var(--mono)}
+table.diff td{vertical-align:top}
+table.diff td.ln{width:3.8em;text-align:right;padding:0 8px;color:var(--muted);background:var(--sunken);user-select:none;font-variant-numeric:tabular-nums}
+table.diff td.code{padding:0 10px;white-space:pre-wrap;word-break:break-all}
+table.diff td.del{background:var(--del-bg)} table.diff td.ins{background:var(--add-bg)} table.diff td.empty{background:var(--sunken)}
+.hl-del{background:var(--del-strong);border-radius:2px} .hl-ins{background:var(--add-strong);border-radius:2px}
+table.diff tr.gap td{background:var(--sunken);color:var(--muted);text-align:center;padding:3px;font:.78rem var(--sans);border-block:1px solid var(--line)}
+table.plist{width:100%;min-width:640px;border-collapse:collapse;font-size:.86rem}
+table.plist th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);font-weight:600;padding:8px 12px;border-bottom:1px solid var(--line);background:var(--sunken);position:sticky;top:0}
+table.plist td{padding:6px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+table.plist td.mono{font:12.5px/1.5 var(--mono);word-break:break-all}
+.tag{display:inline-block;padding:1px 8px;border-radius:4px;font-size:.75rem;font-weight:600;white-space:nowrap}
+.tag.add{background:var(--add-bg);color:var(--add-fg)} .tag.del{background:var(--del-bg);color:var(--del-fg)} .tag.chg{background:var(--chg-bg);color:var(--chg-fg)}
+.same{padding:18px;border-radius:8px;background:var(--add-bg);color:var(--add-fg);font-weight:500}
+.pano{display:grid;grid-template-columns:300px minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:780px){.pano{grid-template-columns:minmax(0,1fr)}}
+.pano-side{display:flex;flex-direction:column;gap:10px;min-width:0}
+.pano-side-head{display:flex;gap:8px}
+.pano-side-head input{flex:1;min-width:0}
+.pano-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto}
+.snip{display:flex;flex-direction:column;gap:3px;width:100%;text-align:left;padding:9px 11px;border:1px solid var(--line);border-radius:7px;background:var(--panel);color:var(--fg);cursor:pointer;font:inherit}
+.snip:hover{border-color:var(--muted)}
+.snip[aria-current="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.snip .t{font-weight:500;font-size:.9rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.snip .m{display:flex;gap:8px;align-items:center;font-size:.76rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{margin:0;padding:16px;border:1px dashed var(--line);border-radius:8px;color:var(--muted);font-size:.88rem}
+.empty strong{color:var(--fg);font-weight:600;display:block;margin-bottom:4px}
+.notice{padding:10px 12px;border-radius:7px;background:var(--chg-bg);color:var(--chg-fg);font-size:.86rem;display:flex;flex-direction:column;gap:8px}
+.edhead{display:flex;gap:10px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line)}
+.edhead input{flex:1;min-width:0;border:0;padding:4px 0;font:600 1rem var(--sans);background:transparent;color:var(--fg)}
+.claims{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:.88rem;padding:12px 14px}
+.claims dt{color:var(--muted);font-family:var(--mono);font-size:.82rem}
+.claims dd{margin:0;font-variant-numeric:tabular-nums;word-break:break-word}
+.hashes{display:flex;flex-direction:column}
+.hashrow{display:grid;grid-template-columns:6.5em minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid var(--line)}
+.hashrow:last-child{border-bottom:0}
+.hashrow b{font:600 .8rem var(--sans);color:var(--muted);letter-spacing:.04em}
+.hashrow code{font:12.5px/1.5 var(--mono);word-break:break-all}
+.hashrow .btn{padding:3px 9px;font-size:.8rem}
+.hint{font-size:.82rem;color:var(--muted);margin:10px 0 0}
+kbd{font:11.5px var(--mono);padding:1px 5px;border:1px solid var(--line);border-bottom-width:2px;border-radius:4px;background:var(--panel)}
+#toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:.88rem;box-shadow:0 6px 24px rgba(0,0,0,.18);z-index:10;max-width:calc(100% - 32px)}
+@media (prefers-reduced-motion:no-preference){#toast{transition:opacity .2s}}
+</style>
+<script src="/vendor/beautify.js" defer></script>
+<script src="/vendor/beautify-css.js" defer></script>
+<script src="/vendor/beautify-html.js" defer></script>
+<script src="/vendor/sql-formatter.min.js" defer></script>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>Kod Tezgâhı</h1>
+      <p>Kodu yapıştır, biçimlendir, karşılaştır. Panoya kaydettiklerin sunucuda durur; bu adresi açtığın her bilgisayardan erişirsin.</p>
+    </div>
+    <span id="sync" class="pill"><i></i><span>Depolama kontrol ediliyor</span></span>
+  </header>
+
+  <nav class="tabs" role="tablist" aria-label="Araçlar">
+    <button class="tab" role="tab" data-tab="pano">Pano</button>
+    <span class="tabsep" aria-hidden="true"></span>
+    <button class="tab" role="tab" data-tab="json">JSON</button>
+    <button class="tab" role="tab" data-tab="xml">XML</button>
+    <button class="tab" role="tab" data-tab="beauty">Güzelleştir</button>
+    <button class="tab" role="tab" data-tab="tree">Ağaç (parser)</button>
+    <span class="tabsep" aria-hidden="true"></span>
+    <button class="tab" role="tab" data-tab="jsoncmp">JSON karşılaştır</button>
+    <button class="tab" role="tab" data-tab="xmlcmp">XML karşılaştır</button>
+    <button class="tab" role="tab" data-tab="textcmp">Metin karşılaştır</button>
+    <span class="tabsep" aria-hidden="true"></span>
+    <button class="tab" role="tab" data-tab="encode">Base64 / URL</button>
+    <button class="tab" role="tab" data-tab="jwt">JWT</button>
+    <button class="tab" role="tab" data-tab="hash">Hash</button>
+  </nav>
+
+  <!-- PANO -->
+  <section class="tool" id="t-pano" role="tabpanel" hidden>
+    <div class="pano">
+      <aside class="pano-side">
+        <div class="pano-side-head">
+          <input id="pano-search" type="search" placeholder="Kayıtlarda ara" aria-label="Kayıtlarda ara">
+          <button id="pano-new" class="btn">Yeni</button>
+        </div>
+        <ul id="pano-list" class="pano-list" aria-label="Kayıtlı parçalar"></ul>
+        <p id="pano-empty" class="empty"><strong>Henüz kayıt yok</strong>Sağdaki alana bir kod parçası yapıştır. Yazmayı bıraktığında kendiliğinden kaydedilir.</p>
+      </aside>
+      <div>
+        <div class="toolbar">
+          <button id="pano-copy" class="btn primary">Kopyala</button>
+          <button id="pano-save" class="btn">Kaydet</button>
+          <button id="pano-open" class="btn" hidden>Araçta aç</button>
+          <span class="grow"></span>
+          <button id="pano-del" class="btn danger" disabled>Sil</button>
+        </div>
+        <div class="pane">
+          <div class="edhead">
+            <input id="pano-title" type="text" placeholder="Başlık (boş kalırsa ilk satır kullanılır)" aria-label="Başlık">
+            <span id="pano-kind" class="chip" hidden></span>
+          </div>
+          <textarea id="pano-body" class="code" spellcheck="false" placeholder="Kodu buraya yapıştır. Dosya da sürükleyip bırakabilirsin." data-drop aria-label="Kod"></textarea>
+          <div class="pane-foot"><span id="pano-stats">0 satır · 0 karakter</span><span id="pano-status">Kaydedilmedi</span></div>
+        </div>
+        <p class="hint"><kbd>Ctrl</kbd> + <kbd>S</kbd> hemen kaydeder.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- JSON -->
+  <section class="tool" id="t-json" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="json-fmt">Biçimlendir</button>
+      <button class="btn" id="json-min">Küçült</button>
+      <label class="check"><input type="checkbox" id="json-sort"> Anahtarları sırala</label>
+      <label class="check">Girinti
+        <select id="json-indent" aria-label="Girinti"><option value="2">2 boşluk</option><option value="4">4 boşluk</option><option value="tab">Sekme</option></select>
+      </label>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Girdi <span class="chip example" data-example-for="json-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="json-in">Temizle</button></span></div>
+        <textarea id="json-in" class="code" spellcheck="false" data-drop data-draft placeholder="JSON yapıştır"></textarea>
+        <div class="pane-foot" data-stats-for="json-in"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Çıktı</span><span class="acts"><button class="btn" data-copy="json-out">Kopyala</button><button class="btn" data-topano="json-out" data-kind="JSON">Panoya kaydet</button></span></div>
+        <textarea id="json-out" class="code" spellcheck="false" readonly aria-label="JSON çıktısı"></textarea>
+        <div class="pane-foot" data-stats-for="json-out"></div>
+      </div>
+    </div>
+    <div id="json-status" class="status" role="status"></div>
+    <p class="hint"><kbd>Ctrl</kbd> + <kbd>Enter</kbd> biçimlendirir.</p>
+  </section>
+
+  <!-- XML -->
+  <section class="tool" id="t-xml" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="xml-fmt">Biçimlendir</button>
+      <button class="btn" id="xml-min">Küçült</button>
+      <label class="check"><input type="checkbox" id="xml-sortattr"> Öznitelikleri sırala</label>
+      <label class="check"><input type="checkbox" id="xml-nocomment"> Yorumları çıkar</label>
+      <label class="check">Girinti
+        <select id="xml-indent" aria-label="Girinti"><option value="2">2 boşluk</option><option value="4">4 boşluk</option><option value="tab">Sekme</option></select>
+      </label>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Girdi <span class="chip example" data-example-for="xml-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="xml-in">Temizle</button></span></div>
+        <textarea id="xml-in" class="code" spellcheck="false" data-drop data-draft placeholder="XML yapıştır"></textarea>
+        <div class="pane-foot" data-stats-for="xml-in"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Çıktı</span><span class="acts"><button class="btn" data-copy="xml-out">Kopyala</button><button class="btn" data-topano="xml-out" data-kind="XML">Panoya kaydet</button></span></div>
+        <textarea id="xml-out" class="code" spellcheck="false" readonly aria-label="XML çıktısı"></textarea>
+        <div class="pane-foot" data-stats-for="xml-out"></div>
+      </div>
+    </div>
+    <div id="xml-status" class="status" role="status"></div>
+  </section>
+
+  <!-- BEAUTIFY -->
+  <section class="tool" id="t-beauty" role="tabpanel" hidden>
+    <div class="toolbar">
+      <select id="bt-lang" aria-label="Dil">
+        <option value="auto">Dili algıla</option>
+        <option value="html">HTML</option>
+        <option value="css">CSS / SCSS / LESS</option>
+        <option value="js">JavaScript / TypeScript</option>
+        <option value="sql">SQL</option>
+      </select>
+      <select id="bt-dialect" aria-label="SQL lehçesi" hidden>
+        <option value="sql">Standart SQL</option>
+        <option value="transactsql">SQL Server (T-SQL)</option>
+        <option value="postgresql">PostgreSQL</option>
+        <option value="mysql">MySQL</option>
+        <option value="plsql">Oracle (PL/SQL)</option>
+        <option value="sqlite">SQLite</option>
+      </select>
+      <button class="btn primary" id="bt-run">Güzelleştir</button>
+      <label class="check">Girinti
+        <select id="bt-indent" aria-label="Girinti"><option value="2">2 boşluk</option><option value="4">4 boşluk</option><option value="tab">Sekme</option></select>
+      </label>
+      <label class="check" id="bt-upper-wrap" hidden><input type="checkbox" id="bt-upper" checked> Anahtar kelimeler büyük harf</label>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Girdi <span class="chip example" data-example-for="bt-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="bt-in">Temizle</button></span></div>
+        <textarea id="bt-in" class="code" spellcheck="false" data-drop data-draft placeholder="HTML, CSS, JavaScript veya SQL yapıştır"></textarea>
+        <div class="pane-foot" data-stats-for="bt-in"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Çıktı</span><span class="acts"><button class="btn" data-copy="bt-out">Kopyala</button><button class="btn" data-topano="bt-out" data-kind="Kod">Panoya kaydet</button></span></div>
+        <textarea id="bt-out" class="code" spellcheck="false" readonly aria-label="Güzelleştirilmiş kod"></textarea>
+        <div class="pane-foot" data-stats-for="bt-out"></div>
+      </div>
+    </div>
+    <div id="bt-status" class="status" role="status" hidden></div>
+  </section>
+
+  <!-- TREE / PARSER -->
+  <section class="tool" id="t-tree" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="tr-run">Ağacı oluştur</button>
+      <button class="btn" id="tr-expand">Tümünü aç</button>
+      <button class="btn" id="tr-collapse">Tümünü kapat</button>
+      <input id="tr-find" type="search" placeholder="Anahtar veya değer ara" aria-label="Ağaçta ara">
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>JSON veya XML <span class="chip example" data-example-for="tr-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="tr-in">Temizle</button></span></div>
+        <textarea id="tr-in" class="code" spellcheck="false" data-drop data-draft placeholder="JSON veya XML yapıştır"></textarea>
+        <div class="pane-foot" data-stats-for="tr-in"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Ağaç <span id="tr-kind" class="chip" hidden></span></span><span id="tr-count" style="text-transform:none;letter-spacing:0;font-weight:400"></span></div>
+        <div id="tr-out" class="tree" role="tree" aria-label="Veri ağacı"></div>
+        <div class="pathbar"><span style="color:var(--muted)">Yol</span><code id="tr-path">Bir düğüme tıkla</code><button class="btn" id="tr-copypath">Yolu kopyala</button><button class="btn" id="tr-copyval">Değeri kopyala</button></div>
+      </div>
+    </div>
+    <div id="tr-status" class="status" role="status" hidden></div>
+    <p class="hint">JSON yolları <code>$.kalemler[0].sku</code>, XML yolları <code>/Fatura/Kalemler/Kalem[2]/@kod</code> biçiminde verilir.</p>
+  </section>
+
+  <!-- JSON COMPARE -->
+  <section class="tool" id="t-jsoncmp" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="jc-run">Karşılaştır</button>
+      <label class="check"><input type="checkbox" id="jc-arrorder"> Dizi sırasını yok say</label>
+      <button class="btn" id="jc-swap">Tarafları değiştir</button>
+      <span class="grow"></span>
+      <div class="seg" role="group" aria-label="Görünüm">
+        <button id="jc-view-list" aria-pressed="true">Fark listesi</button>
+        <button id="jc-view-side" aria-pressed="false">Yan yana</button>
+      </div>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Sol (A) <span class="chip example" data-example-for="jc-a">örnek veri</span></span><span class="acts"><button class="btn" data-clear="jc-a">Temizle</button></span></div>
+        <textarea id="jc-a" class="code short" spellcheck="false" data-drop data-draft placeholder="Birinci JSON"></textarea>
+        <div class="pane-foot" data-stats-for="jc-a"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Sağ (B) <span class="chip example" data-example-for="jc-b">örnek veri</span></span><span class="acts"><button class="btn" data-clear="jc-b">Temizle</button></span></div>
+        <textarea id="jc-b" class="code short" spellcheck="false" data-drop data-draft placeholder="İkinci JSON"></textarea>
+        <div class="pane-foot" data-stats-for="jc-b"></div>
+      </div>
+    </div>
+    <div id="jc-status" class="status" role="status" hidden></div>
+    <div id="jc-result" class="result"></div>
+    <p class="hint">Anahtar sırası farkı saymaz. Yollar <code>$.musteri.sehir</code> biçiminde gösterilir.</p>
+  </section>
+
+  <!-- XML COMPARE -->
+  <section class="tool" id="t-xmlcmp" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="xc-run">Karşılaştır</button>
+      <label class="check"><input type="checkbox" id="xc-sortattr" checked> Öznitelik sırasını yok say</label>
+      <label class="check"><input type="checkbox" id="xc-ws" checked> Metindeki boşlukları yok say</label>
+      <label class="check"><input type="checkbox" id="xc-nocomment"> Yorumları yok say</label>
+      <label class="check"><input type="checkbox" id="xc-only" checked> Sadece farklar</label>
+      <button class="btn" id="xc-swap">Tarafları değiştir</button>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Sol (A) <span class="chip example" data-example-for="xc-a">örnek veri</span></span><span class="acts"><button class="btn" data-clear="xc-a">Temizle</button></span></div>
+        <textarea id="xc-a" class="code short" spellcheck="false" data-drop data-draft placeholder="Birinci XML"></textarea>
+        <div class="pane-foot" data-stats-for="xc-a"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Sağ (B) <span class="chip example" data-example-for="xc-b">örnek veri</span></span><span class="acts"><button class="btn" data-clear="xc-b">Temizle</button></span></div>
+        <textarea id="xc-b" class="code short" spellcheck="false" data-drop data-draft placeholder="İkinci XML"></textarea>
+        <div class="pane-foot" data-stats-for="xc-b"></div>
+      </div>
+    </div>
+    <div id="xc-status" class="status" role="status" hidden></div>
+    <div id="xc-result" class="result"></div>
+    <p class="hint">İki taraf önce aynı kurala göre biçimlendirilir, sonra satır satır karşılaştırılır. Böylece girinti ve satır sonu farkları sonucu bozmaz.</p>
+  </section>
+
+  <!-- TEXT COMPARE -->
+  <section class="tool" id="t-textcmp" role="tabpanel" hidden>
+    <div class="toolbar">
+      <button class="btn primary" id="tc-run">Karşılaştır</button>
+      <label class="check"><input type="checkbox" id="tc-ws"> Boşlukları yok say</label>
+      <label class="check"><input type="checkbox" id="tc-case"> Büyük/küçük harfi yok say</label>
+      <label class="check"><input type="checkbox" id="tc-only"> Sadece farklar</label>
+      <button class="btn" id="tc-swap">Tarafları değiştir</button>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Sol (A) <span class="chip example" data-example-for="tc-a">örnek veri</span></span><span class="acts"><button class="btn" data-clear="tc-a">Temizle</button></span></div>
+        <textarea id="tc-a" class="code short" spellcheck="false" data-drop data-draft placeholder="Eski metin veya kod"></textarea>
+        <div class="pane-foot" data-stats-for="tc-a"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Sağ (B) <span class="chip example" data-example-for="tc-b">örnek veri</span></span><span class="acts"><button class="btn" data-clear="tc-b">Temizle</button></span></div>
+        <textarea id="tc-b" class="code short" spellcheck="false" data-drop data-draft placeholder="Yeni metin veya kod"></textarea>
+        <div class="pane-foot" data-stats-for="tc-b"></div>
+      </div>
+    </div>
+    <div id="tc-result" class="result"></div>
+  </section>
+
+  <!-- ENCODE -->
+  <section class="tool" id="t-encode" role="tabpanel" hidden>
+    <div class="toolbar">
+      <select id="enc-mode" aria-label="Biçim">
+        <option value="b64">Base64</option>
+        <option value="b64url">Base64 URL-güvenli</option>
+        <option value="url">URL bileşeni (encodeURIComponent)</option>
+        <option value="urlfull">Tam URL (encodeURI)</option>
+        <option value="html">HTML varlıkları</option>
+        <option value="hex">Hex (UTF-8 bayt)</option>
+      </select>
+      <button class="btn primary" id="enc-do">Kodla →</button>
+      <button class="btn" id="dec-do">← Çöz</button>
+      <button class="btn" id="enc-swap">Tarafları değiştir</button>
+    </div>
+    <div class="panes">
+      <div class="pane">
+        <div class="pane-head"><span>Düz metin <span class="chip example" data-example-for="enc-plain">örnek veri</span></span><span class="acts"><button class="btn" data-copy="enc-plain">Kopyala</button></span></div>
+        <textarea id="enc-plain" class="code short" spellcheck="false" data-drop data-draft placeholder="Düz metin"></textarea>
+        <div class="pane-foot" data-stats-for="enc-plain"></div>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>Kodlanmış</span><span class="acts"><button class="btn" data-copy="enc-coded">Kopyala</button></span></div>
+        <textarea id="enc-coded" class="code short" spellcheck="false" data-drop data-draft placeholder="Kodlanmış metin"></textarea>
+        <div class="pane-foot" data-stats-for="enc-coded"></div>
+      </div>
+    </div>
+    <div id="enc-status" class="status" role="status" hidden></div>
+  </section>
+
+  <!-- JWT -->
+  <section class="tool" id="t-jwt" role="tabpanel" hidden>
+    <div class="pane">
+      <div class="pane-head"><span>Token <span class="chip example" data-example-for="jwt-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="jwt-in">Temizle</button></span></div>
+      <textarea id="jwt-in" class="code" style="height:auto;min-height:110px" rows="4" spellcheck="false" data-draft placeholder="eyJhbGciOi… ile başlayan JWT'yi yapıştır"></textarea>
+    </div>
+    <div id="jwt-status" class="status" role="status" hidden></div>
+    <div class="panes" style="margin-top:14px">
+      <div class="pane">
+        <div class="pane-head"><span>Başlık (header)</span><span class="acts"><button class="btn" data-copy="jwt-head">Kopyala</button></span></div>
+        <textarea id="jwt-head" class="code short" readonly spellcheck="false" aria-label="JWT başlığı"></textarea>
+      </div>
+      <div class="pane">
+        <div class="pane-head"><span>İçerik (payload)</span><span class="acts"><button class="btn" data-copy="jwt-body">Kopyala</button></span></div>
+        <textarea id="jwt-body" class="code short" readonly spellcheck="false" aria-label="JWT içeriği"></textarea>
+      </div>
+    </div>
+    <div class="pane" style="margin-top:14px">
+      <div class="pane-head"><span>Zaman alanları</span></div>
+      <dl id="jwt-claims" class="claims"></dl>
+    </div>
+    <p class="hint">İmza doğrulanmaz; token yalnızca bu sayfada çözülür, hiçbir yere gönderilmez.</p>
+  </section>
+
+  <!-- HASH -->
+  <section class="tool" id="t-hash" role="tabpanel" hidden>
+    <div class="pane">
+      <div class="pane-head"><span>Metin <span class="chip example" data-example-for="hash-in">örnek veri</span></span><span class="acts"><button class="btn" data-clear="hash-in">Temizle</button></span></div>
+      <textarea id="hash-in" class="code short" spellcheck="false" data-drop data-draft placeholder="Özeti alınacak metin"></textarea>
+      <div class="pane-foot" data-stats-for="hash-in"></div>
+    </div>
+    <div class="pane" style="margin-top:14px">
+      <div class="pane-head"><span>Özetler (UTF-8, hex)</span><label class="check" style="text-transform:none;letter-spacing:0;font-weight:400"><input type="checkbox" id="hash-upper"> Büyük harf</label></div>
+      <div id="hash-out" class="hashes"></div>
+    </div>
+  </section>
+</div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LS = {
+  get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k) { try { localStorage.removeItem(k); } catch {} }
+};
+const debounce = (fn, ms) => { let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); }; };
+const enc = new TextEncoder();
+const fmtTime = ts => new Date(ts).toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+function relTime(ts) {
+  const s = (Date.now() - ts) / 1000;
+  if (s < 60) return "az önce";
+  if (s < 3600) return Math.floor(s / 60) + " dk önce";
+  if (s < 86400) return Math.floor(s / 3600) + " sa önce";
+  return new Date(ts).toLocaleDateString("tr-TR", { day: "numeric", month: "short" });
+}
+function sizeLabel(n) { return n < 1024 ? n + " B" : n < 1048576 ? (n / 1024).toFixed(1) + " KB" : (n / 1048576).toFixed(2) + " MB"; }
+function stats(text) {
+  const lines = text ? text.split("\n").length : 0;
+  return `${lines.toLocaleString("tr-TR")} satır · ${text.length.toLocaleString("tr-TR")} karakter · ${sizeLabel(enc.encode(text).length)}`;
+}
+
+/* ---------- toast & copy ---------- */
+const toastEl = $("#toast"); let toastT;
+function toast(msg) { toastEl.textContent = msg; toastEl.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => { toastEl.hidden = true; }, 2400); }
+function copyText(text, src) {
+  if (!text) { toast("Kopyalanacak bir şey yok"); return; }
+  const fallback = () => {
+    let ok = false;
+    if (src && src.select) { src.focus(); src.select(); try { ok = document.execCommand("copy"); } catch {} }
+    else { const ta = document.createElement("textarea"); ta.value = text; ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); try { ok = document.execCommand("copy"); } catch {} ta.remove(); }
+    toast(ok ? "Kopyalandı" : "Metin seçildi, Ctrl+C ile kopyala");
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(() => toast("Kopyalandı"), fallback);
+    else fallback();
+  } catch { fallback(); }
+}
+
+/* ---------- tabs ---------- */
+const TABS = $$(".tab").map(t => t.dataset.tab);
+const primary = {};
+function showTab(id) {
+  if (!TABS.includes(id)) id = "pano";
+  $$(".tab").forEach(t => { const on = t.dataset.tab === id; t.setAttribute("aria-selected", String(on)); t.tabIndex = on ? 0 : -1; });
+  $$(".tool").forEach(s => { s.hidden = s.id !== "t-" + id; });
+  LS.set("kt:tab", id);
+  try { history.replaceState(null, "", "#" + id); } catch {}
+}
+$$(".tab").forEach(t => t.addEventListener("click", () => showTab(t.dataset.tab)));
+$(".tabs").addEventListener("keydown", e => {
+  if (e.key !== "ArrowRight" && e.key !== "ArrowLeft") return;
+  const cur = TABS.indexOf(LS.get("kt:tab", "pano"));
+  const next = TABS[(cur + (e.key === "ArrowRight" ? 1 : TABS.length - 1)) % TABS.length];
+  showTab(next); $(`.tab[data-tab="${next}"]`).focus();
+});
+document.addEventListener("keydown", e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    const cur = $(".tab[aria-selected='true']"); const fn = cur && primary[cur.dataset.tab];
+    if (fn) { e.preventDefault(); fn(); }
+  }
+});
+
+/* ---------- generic pane helpers ---------- */
+function updStats(id) { const f = $(`[data-stats-for="${id}"]`); const ta = document.getElementById(id); if (f && ta) f.textContent = stats(ta.value); }
+function setVal(id, v) { const ta = document.getElementById(id); ta.value = v; updStats(id); }
+function markEdited(id) { const c = $(`[data-example-for="${id}"]`); if (c) c.hidden = true; }
+const saveDraft = debounce(ta => LS.set("kt:draft:" + ta.id, ta.value), 400);
+$$("textarea.code").forEach(ta => {
+  ta.addEventListener("input", () => { updStats(ta.id); if (ta.hasAttribute("data-draft")) { markEdited(ta.id); saveDraft(ta); } });
+  ta.addEventListener("keydown", e => {
+    if (e.key === "Tab" && !e.shiftKey && !ta.readOnly && !e.ctrlKey) {
+      e.preventDefault(); const s = ta.selectionStart, en = ta.selectionEnd;
+      ta.setRangeText("  ", s, en, "end"); ta.dispatchEvent(new Event("input"));
+    }
+  });
+});
+$$("[data-drop]").forEach(ta => {
+  ta.addEventListener("dragover", e => { if (e.dataTransfer && Array.from(e.dataTransfer.types).includes("Files")) { e.preventDefault(); ta.classList.add("dragging"); } });
+  ta.addEventListener("dragleave", () => ta.classList.remove("dragging"));
+  ta.addEventListener("drop", e => {
+    ta.classList.remove("dragging");
+    const f = e.dataTransfer && e.dataTransfer.files[0]; if (!f) return;
+    e.preventDefault();
+    if (f.size > 8 * 1048576) { toast("Dosya çok büyük (en fazla 8 MB)"); return; }
+    const r = new FileReader();
+    r.onload = () => { ta.value = r.result; ta.dispatchEvent(new Event("input")); toast(f.name + " yüklendi"); };
+    r.onerror = () => toast("Dosya okunamadı");
+    r.readAsText(f);
+  });
+});
+document.addEventListener("click", e => {
+  const c = e.target.closest("[data-copy]");
+  if (c) { const ta = document.getElementById(c.dataset.copy); copyText(ta.value, ta); return; }
+  const cl = e.target.closest("[data-clear]");
+  if (cl) { const ta = document.getElementById(cl.dataset.clear); ta.value = ""; ta.dispatchEvent(new Event("input")); ta.focus(); return; }
+  const tp = e.target.closest("[data-topano]");
+  if (tp) { const ta = document.getElementById(tp.dataset.topano); Pano.quickSave(ta.value, tp.dataset.kind); }
+});
+function setStatus(el, cls, html) { el.hidden = false; el.className = "status" + (cls ? " " + cls : ""); el.innerHTML = html; }
+
+/* ---------- JSON core ---------- */
+function parseJSON(text) {
+  const t = text.replace(/^﻿/, "");
+  if (!t.trim()) return { empty: true };
+  try { return { ok: true, value: JSON.parse(t) }; }
+  catch (e) {
+    const msg = e.message || "Geçersiz JSON"; let line, col, pos;
+    const lc = msg.match(/line (\d+) column (\d+)/);
+    const p = msg.match(/position (\d+)/);
+    if (p) pos = +p[1];
+    if (lc) { line = +lc[1]; col = +lc[2]; }
+    else if (pos != null) { const before = t.slice(0, pos); line = before.split("\n").length; col = pos - before.lastIndexOf("\n"); }
+    else if (/end of (JSON|data)|Unexpected end/i.test(msg)) { line = t.split("\n").length; col = t.split("\n").pop().length + 1; }
+    return { ok: false, msg: msg.replace(/^JSON\.parse:\s*/, ""), line, col };
+  }
+}
+function errBlock(r, text, taId) {
+  let h = r.line ? `<strong>Satır ${r.line}, sütun ${r.col}</strong> · ${esc(r.msg)}` : esc(r.msg);
+  if (r.line && taId) h += `<button class="btn" data-goto="${taId}" data-line="${r.line}" data-col="${r.col}">Hataya git</button>`;
+  if (r.line && text != null) {
+    const l = text.replace(/^﻿/, "").split("\n")[r.line - 1];
+    if (l != null) { const cut = Math.max(0, r.col - 60); h += `<pre>${esc(l.slice(cut, cut + 120))}\n${" ".repeat(Math.max(0, r.col - 1 - cut))}^</pre>`; }
+  }
+  return h;
+}
+document.addEventListener("click", e => {
+  const g = e.target.closest("[data-goto]"); if (!g) return;
+  const ta = document.getElementById(g.dataset.goto); const lines = ta.value.split("\n");
+  let pos = 0; for (let i = 0; i < +g.dataset.line - 1 && i < lines.length; i++) pos += lines[i].length + 1;
+  pos += Math.max(0, +g.dataset.col - 1);
+  ta.focus(); ta.setSelectionRange(pos, Math.min(ta.value.length, pos + 1));
+  const lh = parseFloat(getComputedStyle(ta).lineHeight) || 20; ta.scrollTop = Math.max(0, (+g.dataset.line - 4) * lh);
+});
+const typeOf = v => v === null ? "null" : Array.isArray(v) ? "array" : typeof v;
+function sortKeys(v) {
+  if (Array.isArray(v)) return v.map(sortKeys);
+  if (v && typeof v === "object") { const o = {}; Object.keys(v).sort().forEach(k => { o[k] = sortKeys(v[k]); }); return o; }
+  return v;
+}
+function depthOf(v) { if (v && typeof v === "object") { let m = 0; for (const k in v) m = Math.max(m, depthOf(v[k])); return m + 1; } return 0; }
+function jdesc(v) {
+  const t = typeOf(v);
+  if (t === "object") return `nesne · ${Object.keys(v).length} anahtar · derinlik ${depthOf(v)}`;
+  if (t === "array") return `dizi · ${v.length} öğe · derinlik ${depthOf(v)}`;
+  return { string: "metin", number: "sayı", boolean: "mantıksal", null: "null" }[t] || t;
+}
+const indentOf = sel => { const v = $(sel).value; return v === "tab" ? "\t" : " ".repeat(+v); };
+
+/* ---------- JSON tool ---------- */
+function runJSON(mode) {
+  const st = $("#json-status"); const text = $("#json-in").value; const r = parseJSON(text);
+  if (r.empty) { setVal("json-out", ""); setStatus(st, "", "Soldaki alana JSON yapıştır."); return; }
+  if (!r.ok) { setVal("json-out", ""); setStatus(st, "err", errBlock(r, text, "json-in")); return; }
+  let v = r.value; if ($("#json-sort").checked) v = sortKeys(v);
+  setVal("json-out", mode === "min" ? JSON.stringify(v) : JSON.stringify(v, null, indentOf("#json-indent")));
+  setStatus(st, "ok", `Geçerli JSON · ${jdesc(v)}`);
+}
+let jsonMode = "fmt";
+$("#json-fmt").onclick = () => { jsonMode = "fmt"; runJSON("fmt"); };
+$("#json-min").onclick = () => { jsonMode = "min"; runJSON("min"); };
+["#json-sort", "#json-indent"].forEach(s => $(s).addEventListener("change", () => runJSON(jsonMode)));
+$("#json-in").addEventListener("input", debounce(() => runJSON(jsonMode), 300));
+primary.json = () => runJSON("fmt");
+
+/* ---------- XML core ---------- */
+function parseXML(text) {
+  const t = text.replace(/^﻿/, "");
+  if (!t.trim()) return { empty: true };
+  const doc = new DOMParser().parseFromString(t, "application/xml");
+  const pe = doc.getElementsByTagName("parsererror");
+  if (pe.length) {
+    const raw = pe[0].textContent || ""; let line, col, msg;
+    const m = raw.match(/line (\d+) at column (\d+):?\s*([^\n]*)/i);
+    if (m) { line = +m[1]; col = +m[2]; msg = m[3].replace(/Below is a rendering.*$/i, "").trim(); }
+    else { const f = raw.match(/Line Number (\d+), Column (\d+)/i); if (f) { line = +f[1]; col = +f[2]; } msg = raw.split("\n")[0].replace(/^XML Parsing Error:\s*/i, "").trim(); }
+    return { ok: false, line, col, msg: msg || "Geçersiz XML" };
+  }
+  const decl = (t.match(/^\s*(<\?xml[\s\S]*?\?>)/) || [])[1] || "";
+  return { ok: true, doc, decl };
+}
+function xmlString(doc, o) {
+  const nl = o.pretty ? "\n" : "";
+  const pad = d => o.pretty ? o.indent.repeat(d) : "";
+  const escT = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  const escA = s => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/"/g, "&quot;").replace(/\n/g, "&#10;");
+  const txt = s => { let v = o.pretty ? s.trim() : s; if (o.collapseWS) v = v.replace(/\s+/g, " ").trim(); return escT(v); };
+  const attrs = el => { const a = Array.from(el.attributes).map(x => [x.name, x.value]); if (o.sortAttrs) a.sort((p, q) => p[0] < q[0] ? -1 : p[0] > q[0] ? 1 : 0); return a.map(([k, v]) => ` ${k}="${escA(v)}"`).join(""); };
+  const keep = c => !(c.nodeType === 3 && !c.nodeValue.trim()) && !(o.stripComments && c.nodeType === 8);
+  function node(n, d) {
+    switch (n.nodeType) {
+      case 1: {
+        const kids = Array.from(n.childNodes).filter(keep); const open = "<" + n.nodeName + attrs(n);
+        if (!kids.length) return pad(d) + open + "/>";
+        if (kids.length === 1 && (kids[0].nodeType === 3 || kids[0].nodeType === 4)) {
+          const k = kids[0]; return pad(d) + open + ">" + (k.nodeType === 3 ? txt(k.nodeValue) : "<![CDATA[" + k.nodeValue + "]]>") + "</" + n.nodeName + ">";
+        }
+        return pad(d) + open + ">" + nl + kids.map(c => node(c, d + 1)).filter(s => s != null).join(nl) + nl + pad(d) + "</" + n.nodeName + ">";
+      }
+      case 3: return pad(d) + txt(n.nodeValue);
+      case 4: return pad(d) + "<![CDATA[" + n.nodeValue + "]]>";
+      case 7: return pad(d) + "<?" + n.target + (n.data ? " " + n.data : "") + "?>";
+      case 8: return o.stripComments ? null : pad(d) + "<!--" + n.nodeValue + "-->";
+      case 10: return pad(d) + "<!DOCTYPE " + n.name + (n.publicId ? ` PUBLIC "${n.publicId}"` : "") + (n.systemId ? (n.publicId ? "" : " SYSTEM") + ` "${n.systemId}"` : "") + ">";
+      default: return null;
+    }
+  }
+  const parts = []; if (o.decl) parts.push(o.decl);
+  Array.from(doc.childNodes).filter(keep).forEach(c => { const s = node(c, 0); if (s != null) parts.push(s); });
+  return parts.join(nl);
+}
+
+/* ---------- XML tool ---------- */
+let xmlMode = "fmt";
+function runXML(mode) {
+  const st = $("#xml-status"); const text = $("#xml-in").value; const r = parseXML(text);
+  if (r.empty) { setVal("xml-out", ""); setStatus(st, "", "Soldaki alana XML yapıştır."); return; }
+  if (!r.ok) { setVal("xml-out", ""); setStatus(st, "err", errBlock(r, text, "xml-in")); return; }
+  const out = xmlString(r.doc, { pretty: mode !== "min", indent: indentOf("#xml-indent"), sortAttrs: $("#xml-sortattr").checked, stripComments: $("#xml-nocomment").checked, decl: r.decl });
+  setVal("xml-out", out);
+  const root = r.doc.documentElement; const all = r.doc.getElementsByTagName("*").length;
+  let depth = 0; (function walk(n, d) { depth = Math.max(depth, d); for (const c of n.children) walk(c, d + 1); })(root, 1);
+  setStatus(st, "ok", `Geçerli XML · kök <code>&lt;${esc(root.nodeName)}&gt;</code> · ${all} öğe · derinlik ${depth}`);
+}
+$("#xml-fmt").onclick = () => { xmlMode = "fmt"; runXML("fmt"); };
+$("#xml-min").onclick = () => { xmlMode = "min"; runXML("min"); };
+["#xml-sortattr", "#xml-nocomment", "#xml-indent"].forEach(s => $(s).addEventListener("change", () => runXML(xmlMode)));
+$("#xml-in").addEventListener("input", debounce(() => runXML(xmlMode), 300));
+primary.xml = () => runXML("fmt");
+
+/* ---------- diff engine (Myers) ---------- */
+function myersOps(a, b) {
+  let s = 0; while (s < a.length && s < b.length && a[s] === b[s]) s++;
+  let ea = a.length, eb = b.length; while (ea > s && eb > s && a[ea - 1] === b[eb - 1]) { ea--; eb--; }
+  const A = a.slice(s, ea), B = b.slice(s, eb), n = A.length, m = B.length;
+  const ops = []; for (let i = 0; i < s; i++) ops.push({ t: "eq", a: i, b: i });
+  let mid;
+  if (!n) mid = B.map((_, j) => ({ t: "ins", b: j }));
+  else if (!m) mid = A.map((_, i) => ({ t: "del", a: i }));
+  else mid = core(A, B, n, m);
+  for (const o of mid) ops.push({ t: o.t, a: o.a != null ? o.a + s : undefined, b: o.b != null ? o.b + s : undefined });
+  for (let i = 0; i < a.length - ea; i++) ops.push({ t: "eq", a: ea + i, b: eb + i });
+  return ops;
+  function core(A, B, n, m) {
+    const max = n + m, O = max + 1, v = new Int32Array(2 * max + 3), trace = [], LIMIT = 6000;
+    for (let d = 0; d <= max; d++) {
+      if (d > LIMIT) return A.map((_, i) => ({ t: "del", a: i })).concat(B.map((_, j) => ({ t: "ins", b: j })));
+      trace.push(v.slice(O - d - 1, O + d + 2));
+      for (let k = -d; k <= d; k += 2) {
+        let x = (k === -d || (k !== d && v[O + k - 1] < v[O + k + 1])) ? v[O + k + 1] : v[O + k - 1] + 1;
+        let y = x - k;
+        while (x < n && y < m && A[x] === B[y]) { x++; y++; }
+        v[O + k] = x;
+        if (x >= n && y >= m) return back(trace, n, m);
+      }
+    }
+    return [];
+  }
+  function back(trace, n, m) {
+    const out = []; let x = n, y = m;
+    for (let d = trace.length - 1; d >= 0; d--) {
+      const t = trace[d], get = k => t[k + d + 1], k = x - y;
+      const pk = (k === -d || (k !== d && get(k - 1) < get(k + 1))) ? k + 1 : k - 1;
+      const px = get(pk), py = px - pk;
+      while (x > px && y > py) { out.push({ t: "eq", a: x - 1, b: y - 1 }); x--; y--; }
+      if (d > 0) out.push(x === px ? { t: "ins", b: y - 1 } : { t: "del", a: x - 1 });
+      x = px; y = py;
+    }
+    return out.reverse();
+  }
+}
+function inlinePair(a, b) {
+  if (a.length + b.length > 3000) return [esc(a), esc(b)];
+  const ca = Array.from(a), cb = Array.from(b), ops = myersOps(ca, cb);
+  let L = "", R = "", lb = "", rb = "", lt = "", rt = "";
+  const flushL = () => { if (lb) L += lt === "del" ? `<span class="hl-del">${esc(lb)}</span>` : esc(lb); lb = ""; };
+  const flushR = () => { if (rb) R += rt === "ins" ? `<span class="hl-ins">${esc(rb)}</span>` : esc(rb); rb = ""; };
+  for (const o of ops) {
+    if (o.t === "eq" || o.t === "del") { const ty = o.t; if (ty !== lt) { flushL(); lt = ty; } lb += ca[o.a]; }
+    if (o.t === "eq" || o.t === "ins") { const ty = o.t; if (ty !== rt) { flushR(); rt = ty; } rb += cb[o.b]; }
+  }
+  flushL(); flushR(); return [L, R];
+}
+function diffLines(aText, bText, keyFn) {
+  const al = aText.split(/\r?\n/), bl = bText.split(/\r?\n/);
+  const ops = myersOps(al.map(keyFn), bl.map(keyFn));
+  const rows = []; let i = 0;
+  while (i < ops.length) {
+    if (ops[i].t === "eq") { rows.push({ t: "eq", a: ops[i].a, b: ops[i].b }); i++; continue; }
+    const dels = [], ins = [];
+    while (i < ops.length && ops[i].t !== "eq") { (ops[i].t === "del" ? dels : ins).push(ops[i]); i++; }
+    const p = Math.min(dels.length, ins.length);
+    for (let j = 0; j < p; j++) rows.push({ t: "chg", a: dels[j].a, b: ins[j].b });
+    for (let j = p; j < dels.length; j++) rows.push({ t: "del", a: dels[j].a });
+    for (let j = p; j < ins.length; j++) rows.push({ t: "ins", b: ins[j].b });
+  }
+  const st = { add: 0, del: 0, chg: 0 };
+  rows.forEach(r => { if (r.t === "ins") st.add++; else if (r.t === "del") st.del++; else if (r.t === "chg") st.chg++; });
+  return { rows, al, bl, st };
+}
+function diffTable(d, onlyChanges) {
+  const { rows, al, bl } = d, CTX = 3, MAXR = 20000;
+  let show = rows.map(() => true);
+  if (onlyChanges) {
+    show = rows.map(() => false);
+    rows.forEach((r, i) => { if (r.t !== "eq") for (let j = Math.max(0, i - CTX); j <= Math.min(rows.length - 1, i + CTX); j++) show[j] = true; });
+  }
+  let h = '<div class="diffbox"><table class="diff"><colgroup><col style="width:3.8em"><col><col style="width:3.8em"><col></colgroup><tbody>';
+  let hidden = 0, count = 0;
+  const gap = () => { if (hidden) { h += `<tr class="gap"><td colspan="4">${hidden.toLocaleString("tr-TR")} satır aynı</td></tr>`; hidden = 0; } };
+  for (let i = 0; i < rows.length; i++) {
+    if (!show[i]) { hidden++; continue; }
+    gap();
+    if (++count > MAXR) { h += `<tr class="gap"><td colspan="4">Çok uzun: ilk ${MAXR.toLocaleString("tr-TR")} satır gösterildi</td></tr>`; break; }
+    const r = rows[i];
+    if (r.t === "eq") { const t = esc(al[r.a]); h += `<tr><td class="ln">${r.a + 1}</td><td class="code">${t}</td><td class="ln">${r.b + 1}</td><td class="code">${esc(bl[r.b])}</td></tr>`; }
+    else if (r.t === "chg") { const [L, R] = inlinePair(al[r.a], bl[r.b]); h += `<tr><td class="ln">${r.a + 1}</td><td class="code del">${L}</td><td class="ln">${r.b + 1}</td><td class="code ins">${R}</td></tr>`; }
+    else if (r.t === "del") h += `<tr><td class="ln">${r.a + 1}</td><td class="code del">${esc(al[r.a])}</td><td class="ln"></td><td class="code empty"></td></tr>`;
+    else h += `<tr><td class="ln"></td><td class="code empty"></td><td class="ln">${r.b + 1}</td><td class="code ins">${esc(bl[r.b])}</td></tr>`;
+  }
+  gap();
+  return h + "</tbody></table></div>";
+}
+function countChips(st, labels) {
+  return `<div class="sumrow"><span class="count chg"><b>${st.chg}</b> ${labels[0]}</span><span class="count add"><b>${st.add}</b> ${labels[1]}</span><span class="count del"><b>${st.del}</b> ${labels[2]}</span></div>`;
+}
+function swap(a, b) { const A = document.getElementById(a), B = document.getElementById(b); const t = A.value; A.value = B.value; B.value = t; A.dispatchEvent(new Event("input")); B.dispatchEvent(new Event("input")); }
+
+/* ---------- JSON compare ---------- */
+function stableStr(v) { return JSON.stringify(sortKeys(v)); }
+function canonJSON(v, ignoreOrder) {
+  if (Array.isArray(v)) { const a = v.map(x => canonJSON(x, ignoreOrder)); return ignoreOrder ? a.sort((p, q) => { const s = JSON.stringify(p), t = JSON.stringify(q); return s < t ? -1 : s > t ? 1 : 0; }) : a; }
+  if (v && typeof v === "object") { const o = {}; Object.keys(v).sort().forEach(k => { o[k] = canonJSON(v[k], ignoreOrder); }); return o; }
+  return v;
+}
+const keyPath = (p, k) => /^[A-Za-z_$][\w$]*$/.test(k) ? `${p}.${k}` : `${p}[${JSON.stringify(k)}]`;
+function diffJSON(a, b, p, out, ignoreOrder) {
+  const ta = typeOf(a), tb = typeOf(b);
+  if (ta !== tb) { out.push({ t: "chg", p, a, b }); return; }
+  if (ta === "object") {
+    const keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b)))).sort();
+    for (const k of keys) {
+      const ha = Object.prototype.hasOwnProperty.call(a, k), hb = Object.prototype.hasOwnProperty.call(b, k);
+      if (ha && !hb) out.push({ t: "del", p: keyPath(p, k), a: a[k] });
+      else if (!ha && hb) out.push({ t: "add", p: keyPath(p, k), b: b[k] });
+      else diffJSON(a[k], b[k], keyPath(p, k), out, ignoreOrder);
+    }
+  } else if (ta === "array") {
+    if (ignoreOrder) {
+      const pool = new Map(); b.forEach(x => { const s = stableStr(x); pool.set(s, (pool.get(s) || []).concat([x])); });
+      a.forEach((x, i) => { const s = stableStr(x), l = pool.get(s); if (l && l.length) l.shift(); else out.push({ t: "del", p: `${p}[${i}]`, a: x }); });
+      const left = new Map(); pool.forEach((l, s) => left.set(s, l.length));
+      b.forEach((x, j) => { const s = stableStr(x), n = left.get(s); if (n) { out.push({ t: "add", p: `${p}[${j}]`, b: x }); left.set(s, n - 1); } });
+    } else {
+      const n = Math.max(a.length, b.length);
+      for (let i = 0; i < n; i++) {
+        if (i >= b.length) out.push({ t: "del", p: `${p}[${i}]`, a: a[i] });
+        else if (i >= a.length) out.push({ t: "add", p: `${p}[${i}]`, b: b[i] });
+        else diffJSON(a[i], b[i], `${p}[${i}]`, out, ignoreOrder);
+      }
+    }
+  } else if (a !== b) out.push({ t: "chg", p, a, b });
+}
+const preview = v => { const s = JSON.stringify(v); return s.length > 160 ? s.slice(0, 157) + "…" : s; };
+let jcView = LS.get("kt:jcview", "list");
+function setJcView(v) { jcView = v; LS.set("kt:jcview", v); $("#jc-view-list").setAttribute("aria-pressed", String(v === "list")); $("#jc-view-side").setAttribute("aria-pressed", String(v === "side")); runJC(); }
+function runJC() {
+  const st = $("#jc-status"), res = $("#jc-result");
+  const ta = $("#jc-a").value, tb = $("#jc-b").value, ra = parseJSON(ta), rb = parseJSON(tb);
+  res.innerHTML = "";
+  if (ra.empty || rb.empty) { setStatus(st, "", "İki tarafa da JSON yapıştır."); return; }
+  if (!ra.ok || !rb.ok) {
+    let h = ""; if (!ra.ok) h += `<div><strong>Sol (A):</strong> ${errBlock(ra, ta, "jc-a")}</div>`;
+    if (!rb.ok) h += `<div style="margin-top:6px"><strong>Sağ (B):</strong> ${errBlock(rb, tb, "jc-b")}</div>`;
+    setStatus(st, "err", h); return;
+  }
+  const ign = $("#jc-arrorder").checked, out = []; diffJSON(ra.value, rb.value, "$", out, ign);
+  const sc = { chg: out.filter(x => x.t === "chg").length, add: out.filter(x => x.t === "add").length, del: out.filter(x => x.t === "del").length };
+  if (!out.length) { st.hidden = true; res.innerHTML = `<div class="same">İki JSON aynı.${ign ? " Dizi sırası dikkate alınmadı." : ""} Anahtar sırası farkı sayılmaz.</div>`; return; }
+  st.hidden = true;
+  let h = countChips(sc, ["değişen", "eklenen", "silinen"]);
+  if (jcView === "list") {
+    const lab = { chg: "Değişti", add: "Eklendi", del: "Silindi" };
+    h += '<div class="diffbox"><table class="plist"><thead><tr><th style="width:7.5em">Durum</th><th>Yol</th><th>Sol (A)</th><th>Sağ (B)</th></tr></thead><tbody>';
+    out.slice(0, 5000).forEach(x => {
+      h += `<tr><td><span class="tag ${x.t}">${lab[x.t]}</span></td><td class="mono">${esc(x.p)}</td><td class="mono">${x.t === "add" ? "" : esc(preview(x.a))}</td><td class="mono">${x.t === "del" ? "" : esc(preview(x.b))}</td></tr>`;
+    });
+    h += "</tbody></table></div>";
+    if (out.length > 5000) h += `<p class="hint">İlk 5.000 fark gösterildi (toplam ${out.length.toLocaleString("tr-TR")}).</p>`;
+  } else {
+    const A = JSON.stringify(canonJSON(ra.value, ign), null, 2), B = JSON.stringify(canonJSON(rb.value, ign), null, 2);
+    h += diffTable(diffLines(A, B, x => x), true);
+    h += '<p class="hint">Yan yana görünümde iki taraf anahtarları sıralanmış hâliyle gösterilir.</p>';
+  }
+  res.innerHTML = h;
+}
+$("#jc-run").onclick = runJC;
+$("#jc-arrorder").addEventListener("change", runJC);
+$("#jc-swap").onclick = () => { swap("jc-a", "jc-b"); runJC(); };
+$("#jc-view-list").onclick = () => setJcView("list");
+$("#jc-view-side").onclick = () => setJcView("side");
+["#jc-a", "#jc-b"].forEach(s => $(s).addEventListener("input", debounce(runJC, 400)));
+primary.jsoncmp = runJC;
+
+/* ---------- XML compare ---------- */
+function runXC() {
+  const st = $("#xc-status"), res = $("#xc-result");
+  const ta = $("#xc-a").value, tb = $("#xc-b").value, ra = parseXML(ta), rb = parseXML(tb);
+  res.innerHTML = "";
+  if (ra.empty || rb.empty) { setStatus(st, "", "İki tarafa da XML yapıştır."); return; }
+  if (!ra.ok || !rb.ok) {
+    let h = ""; if (!ra.ok) h += `<div><strong>Sol (A):</strong> ${errBlock(ra, ta, "xc-a")}</div>`;
+    if (!rb.ok) h += `<div style="margin-top:6px"><strong>Sağ (B):</strong> ${errBlock(rb, tb, "xc-b")}</div>`;
+    setStatus(st, "err", h); return;
+  }
+  st.hidden = true;
+  const o = { pretty: true, indent: "  ", sortAttrs: $("#xc-sortattr").checked, stripComments: $("#xc-nocomment").checked, collapseWS: $("#xc-ws").checked };
+  const d = diffLines(xmlString(ra.doc, o), xmlString(rb.doc, o), x => x);
+  if (!d.st.add && !d.st.del && !d.st.chg) { res.innerHTML = '<div class="same">İki XML seçili kurallara göre aynı.</div>'; return; }
+  res.innerHTML = countChips(d.st, ["değişen satır", "eklenen satır", "silinen satır"]) + diffTable(d, $("#xc-only").checked);
+}
+$("#xc-run").onclick = runXC;
+["#xc-sortattr", "#xc-ws", "#xc-nocomment", "#xc-only"].forEach(s => $(s).addEventListener("change", runXC));
+$("#xc-swap").onclick = () => { swap("xc-a", "xc-b"); runXC(); };
+["#xc-a", "#xc-b"].forEach(s => $(s).addEventListener("input", debounce(runXC, 400)));
+primary.xmlcmp = runXC;
+
+/* ---------- text compare ---------- */
+function runTC() {
+  const res = $("#tc-result"), A = $("#tc-a").value, B = $("#tc-b").value;
+  if (!A && !B) { res.innerHTML = '<div class="status">İki tarafa da metin yapıştır.</div>'; return; }
+  const ws = $("#tc-ws").checked, cs = $("#tc-case").checked;
+  const key = x => { let k = x; if (ws) k = k.replace(/\s+/g, " ").trim(); if (cs) k = k.toLocaleLowerCase("tr-TR"); return k; };
+  const d = diffLines(A, B, key);
+  if (!d.st.add && !d.st.del && !d.st.chg) { res.innerHTML = '<div class="same">İki metin aynı.</div>'; return; }
+  res.innerHTML = countChips(d.st, ["değişen satır", "eklenen satır", "silinen satır"]) + diffTable(d, $("#tc-only").checked);
+}
+$("#tc-run").onclick = runTC;
+["#tc-ws", "#tc-case", "#tc-only"].forEach(s => $(s).addEventListener("change", runTC));
+$("#tc-swap").onclick = () => { swap("tc-a", "tc-b"); runTC(); };
+["#tc-a", "#tc-b"].forEach(s => $(s).addEventListener("input", debounce(runTC, 400)));
+primary.textcmp = runTC;
+
+/* ---------- encode / decode ---------- */
+function bytesToB64(bytes) { let s = ""; for (let i = 0; i < bytes.length; i += 0x8000) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000)); return btoa(s); }
+function b64ToBytes(b64) { const s = atob(b64); const u = new Uint8Array(s.length); for (let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+function b64urlDecodeToBytes(t) { let s = t.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/"); while (s.length % 4) s += "="; return b64ToBytes(s); }
+const dec = new TextDecoder("utf-8");
+function encodeText(mode, t) {
+  switch (mode) {
+    case "b64": return bytesToB64(enc.encode(t));
+    case "b64url": return bytesToB64(enc.encode(t)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    case "url": return encodeURIComponent(t);
+    case "urlfull": return encodeURI(t);
+    case "html": return t.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    case "hex": return Array.from(enc.encode(t), b => b.toString(16).padStart(2, "0")).join(" ");
+  }
+}
+function decodeText(mode, t) {
+  switch (mode) {
+    case "b64": return dec.decode(b64ToBytes(t.replace(/\s+/g, "")));
+    case "b64url": return dec.decode(b64urlDecodeToBytes(t));
+    case "url": return decodeURIComponent(t.replace(/\+/g, " "));
+    case "urlfull": return decodeURI(t);
+    case "html": { const d = new DOMParser().parseFromString("<!doctype html><body>" + t.replace(/</g, "&lt;"), "text/html"); return d.body.textContent; }
+    case "hex": { const h = t.replace(/0x/gi, "").replace(/[^0-9a-f]/gi, ""); if (h.length % 2) throw new Error("Tek sayıda hex karakter var"); const u = new Uint8Array(h.length / 2); for (let i = 0; i < u.length; i++) u[i] = parseInt(h.substr(i * 2, 2), 16); return dec.decode(u); }
+  }
+}
+function runEnc(dir) {
+  const st = $("#enc-status"), mode = $("#enc-mode").value;
+  try {
+    if (dir === "enc") setVal("enc-coded", encodeText(mode, $("#enc-plain").value));
+    else setVal("enc-plain", decodeText(mode, $("#enc-coded").value));
+    st.hidden = true;
+  } catch (e) { setStatus(st, "err", `Çözülemedi: ${esc(e.message || e)}. Seçili biçimin girdiye uyduğundan emin ol.`); }
+}
+$("#enc-do").onclick = () => runEnc("enc");
+$("#dec-do").onclick = () => runEnc("dec");
+$("#enc-mode").addEventListener("change", () => runEnc("enc"));
+$("#enc-swap").onclick = () => swap("enc-plain", "enc-coded");
+primary.encode = () => runEnc("enc");
+
+/* ---------- JWT ---------- */
+function runJWT() {
+  const st = $("#jwt-status"), t = $("#jwt-in").value.trim().replace(/^Bearer\s+/i, ""), cl = $("#jwt-claims");
+  setVal("jwt-head", ""); setVal("jwt-body", ""); cl.innerHTML = "";
+  if (!t) { setStatus(st, "", "Bir JWT yapıştır."); return; }
+  const parts = t.split(".");
+  if (parts.length < 2) { setStatus(st, "err", "Bu bir JWT gibi görünmüyor: nokta ile ayrılmış en az iki parça bekleniyor."); return; }
+  let head, body;
+  try { head = JSON.parse(dec.decode(b64urlDecodeToBytes(parts[0]))); } catch { setStatus(st, "err", "Başlık (1. parça) Base64URL JSON olarak çözülemedi."); return; }
+  try { body = JSON.parse(dec.decode(b64urlDecodeToBytes(parts[1]))); } catch { setStatus(st, "err", "İçerik (2. parça) Base64URL JSON olarak çözülemedi."); return; }
+  $("#jwt-head").value = JSON.stringify(head, null, 2); $("#jwt-body").value = JSON.stringify(body, null, 2);
+  const now = Date.now() / 1000, names = { iat: "Oluşturulma", nbf: "Geçerlilik başı", exp: "Son geçerlilik", auth_time: "Kimlik doğrulama" };
+  let h = "", expired = null;
+  for (const k of ["iat", "nbf", "exp", "auth_time"]) {
+    if (typeof body[k] !== "number") continue;
+    const d = new Date(body[k] * 1000);
+    h += `<dt>${k}</dt><dd>${names[k]}: ${d.toLocaleString("tr-TR", { dateStyle: "medium", timeStyle: "medium" })} <span class="chip">${relTime(body[k] * 1000).replace("önce", "önce")}</span></dd>`;
+    if (k === "exp") expired = body[k] < now;
+  }
+  for (const k of ["iss", "sub", "aud"]) if (body[k] != null) h += `<dt>${k}</dt><dd>${esc(Array.isArray(body[k]) ? body[k].join(", ") : body[k])}</dd>`;
+  cl.innerHTML = h || '<dt>–</dt><dd>Zaman alanı yok</dd>';
+  const alg = head.alg ? ` · algoritma ${esc(head.alg)}` : "";
+  if (expired === true) setStatus(st, "err", `Çözüldü${alg} · <strong>süresi dolmuş</strong>`);
+  else setStatus(st, "ok", `Çözüldü${alg}${expired === false ? " · süresi geçerli" : ""}${parts[2] ? "" : " · imza yok"}`);
+}
+$("#jwt-in").addEventListener("input", debounce(runJWT, 200));
+primary.jwt = runJWT;
+// relTime future-aware for JWT
+const _rel = relTime;
+relTime = function (ts) {
+  const s = (ts - Date.now()) / 1000;
+  if (s <= 0) return _rel(ts);
+  if (s < 3600) return Math.ceil(s / 60) + " dk sonra";
+  if (s < 86400) return Math.floor(s / 3600) + " sa sonra";
+  return Math.floor(s / 86400) + " gün sonra";
+};
+
+/* ---------- hash ---------- */
+const ALGS = ["SHA-1", "SHA-256", "SHA-384", "SHA-512"];
+async function runHash() {
+  const box = $("#hash-out"), t = $("#hash-in").value, up = $("#hash-upper").checked;
+  if (!(window.crypto && crypto.subtle)) { box.innerHTML = '<div class="hashrow"><span></span><code>Bu tarayıcı özet almayı desteklemiyor.</code><span></span></div>'; return; }
+  const data = enc.encode(t);
+  const rows = await Promise.all(ALGS.map(async a => { const h = new Uint8Array(await crypto.subtle.digest(a, data)); let s = Array.from(h, b => b.toString(16).padStart(2, "0")).join(""); return [a, up ? s.toUpperCase() : s]; }));
+  box.innerHTML = rows.map(([a, h]) => `<div class="hashrow"><b>${a}</b><code>${h}</code><button class="btn" data-hash="${h}">Kopyala</button></div>`).join("");
+}
+$("#hash-out").addEventListener("click", e => { const b = e.target.closest("[data-hash]"); if (b) copyText(b.dataset.hash); });
+$("#hash-in").addEventListener("input", debounce(runHash, 200));
+$("#hash-upper").addEventListener("change", runHash);
+primary.hash = runHash;
+
+/* ---------- beautify ---------- */
+function detectLang(t) {
+  const s = t.trim();
+  if (s.startsWith("<")) return "html";
+  if (/^(select|insert|update|delete|with|create|alter|drop|merge|exec|execute|declare|truncate|grant)\b/i.test(s)) return "sql";
+  if (/^[@.#:*\[\w-][^{};=()]*\{[^{}]*:[^{}]*;?[^{}]*\}/.test(s) && !/\b(function|const|let|var|return|import|export)\b|=>/.test(s)) return "css";
+  return "js";
+}
+const LANG_NAMES = { html: "HTML", css: "CSS", js: "JavaScript", sql: "SQL" };
+function effLang() { const v = $("#bt-lang").value; return v === "auto" ? detectLang($("#bt-in").value) : v; }
+function syncBeautyOpts() { const sql = effLang() === "sql"; $("#bt-dialect").hidden = !sql; $("#bt-upper-wrap").hidden = !sql; }
+function runBeauty() {
+  const st = $("#bt-status"), t = $("#bt-in").value;
+  syncBeautyOpts();
+  if (!t.trim()) { setVal("bt-out", ""); setStatus(st, "", "Soldaki alana kod yapıştır."); return; }
+  const lang = effLang(), iv = $("#bt-indent").value, tabs = iv === "tab", size = tabs ? 1 : +iv;
+  const o = { indent_size: size, indent_char: tabs ? "\t" : " ", indent_with_tabs: tabs, preserve_newlines: true, max_preserve_newlines: 2, end_with_newline: false };
+  try {
+    let out;
+    if (lang === "sql") {
+      if (!window.sqlFormatter) throw new Error("SQL biçimlendirici yüklenemedi");
+      out = sqlFormatter.format(t, { language: $("#bt-dialect").value, tabWidth: size, useTabs: tabs, keywordCase: $("#bt-upper").checked ? "upper" : "preserve" });
+    } else {
+      const fn = { js: window.js_beautify, css: window.css_beautify, html: window.html_beautify }[lang];
+      if (!fn) throw new Error("Biçimlendirici kütüphanesi yüklenemedi");
+      out = fn(t, lang === "html" ? Object.assign({}, o, { wrap_line_length: 0, indent_inner_html: true, extra_liners: [] }) : o);
+    }
+    setVal("bt-out", out);
+    setStatus(st, "ok", `${LANG_NAMES[lang]} güzelleştirildi${$("#bt-lang").value === "auto" ? " · dil otomatik algılandı" : ""}`);
+  } catch (e) {
+    setVal("bt-out", "");
+    setStatus(st, "err", `${LANG_NAMES[lang]} biçimlendirilemedi: ${esc(e.message || e)}`);
+  }
+}
+$("#bt-run").onclick = runBeauty;
+["#bt-lang", "#bt-dialect", "#bt-indent", "#bt-upper"].forEach(s => $(s).addEventListener("change", runBeauty));
+$("#bt-in").addEventListener("input", debounce(runBeauty, 400));
+primary.beauty = runBeauty;
+
+/* ---------- tree / parser ---------- */
+const CHUNK = 300;
+const TR = { kind: null, map: new Map(), info: new WeakMap(), sel: null, root: null };
+function trReg(el, path, info) { TR.map.set(path, el); TR.info.set(el, Object.assign({ path }, info)); }
+function showKids(d, upto) {
+  if (!d._entries) d._entries = d._getEntries();
+  const E = d._entries, box = d.lastElementChild, from = d._shown || 0, to = Math.min(E.length, upto);
+  const more = box.querySelector(":scope > .more"); if (more) more.remove();
+  const frag = document.createDocumentFragment();
+  for (let i = from; i < to; i++) frag.appendChild(d._make(E[i]));
+  box.appendChild(frag);
+  d._shown = Math.max(from, to);
+  if (d._shown < E.length) {
+    const b = document.createElement("button"); b.className = "btn more"; b.type = "button";
+    b.textContent = `${(E.length - d._shown).toLocaleString("tr-TR")} öğe daha göster`;
+    b.onclick = () => showKids(d, d._shown + CHUNK); box.appendChild(b);
+  }
+}
+function mkBranch(labelHtml, metaText, path, info, getEntries, make) {
+  const d = document.createElement("details"); d.setAttribute("role", "treeitem");
+  d.innerHTML = `<summary>${labelHtml}<span class="meta">${esc(metaText)}</span></summary><div class="kids" role="group"></div>`;
+  d._getEntries = getEntries; d._make = make;
+  d.addEventListener("toggle", () => { if (d.open && !d._shown) showKids(d, CHUNK); });
+  trReg(d, path, info); return d;
+}
+function mkLeaf(html, path, info) { const el = document.createElement("div"); el.className = "leaf"; el.setAttribute("role", "treeitem"); el.innerHTML = html; trReg(el, path, info); return el; }
+function jBuild(label, val, path) {
+  const t = typeOf(val);
+  if (t !== "object" && t !== "array") {
+    const cls = t === "string" ? "s" : t === "number" ? "n" : t === "boolean" ? "b" : "z";
+    return mkLeaf(`<span class="k">${esc(label)}</span><span class="meta">:</span> <span class="v ${cls}">${esc(t === "string" ? JSON.stringify(val) : String(val))}</span>`, path, { kind: "json", val });
+  }
+  const isArr = t === "array", n = isArr ? val.length : Object.keys(val).length;
+  return mkBranch(`<span class="k">${esc(label)}</span>`, isArr ? `[${n}]` : `{${n}}`, path, { kind: "json", val },
+    () => isArr ? val.map((v, i) => [i, v]) : Object.keys(val).map(k => [k, val[k]]),
+    ([k, v]) => jBuild(isArr ? String(k) : k, v, isArr ? `${path}[${k}]` : keyPath(path, k)));
+}
+function xKids(node) {
+  return Array.from(node.childNodes).filter(c => c.nodeType === 1 || ((c.nodeType === 3 || c.nodeType === 4) && c.nodeValue.trim()) || c.nodeType === 8);
+}
+function xChildPaths(node, path) {
+  const kids = xKids(node), total = {}, seen = {};
+  kids.forEach(c => { if (c.nodeType === 1) total[c.nodeName] = (total[c.nodeName] || 0) + 1; });
+  return kids.map(c => {
+    if (c.nodeType === 1) { seen[c.nodeName] = (seen[c.nodeName] || 0) + 1; return [c, `${path}/${c.nodeName}${total[c.nodeName] > 1 ? `[${seen[c.nodeName]}]` : ""}`]; }
+    return [c, c.nodeType === 8 ? `${path}/comment()` : `${path}/text()`];
+  });
+}
+function xBuild(node, path) {
+  if (node.nodeType === 3 || node.nodeType === 4) return mkLeaf(`<span class="k">#text</span> <span class="v s">${esc(node.nodeValue.trim())}</span>`, path, { kind: "xml", node });
+  if (node.nodeType === 8) return mkLeaf(`<span class="k">#yorum</span> <span class="v z">${esc(node.nodeValue.trim())}</span>`, path, { kind: "xml", node });
+  const attrs = Array.from(node.attributes), kids = xKids(node), tag = `<span class="k">&lt;${esc(node.nodeName)}&gt;</span>`;
+  if (!attrs.length && !kids.length) return mkLeaf(`${tag} <span class="meta">boş</span>`, path, { kind: "xml", node });
+  if (!attrs.length && kids.length === 1 && (kids[0].nodeType === 3 || kids[0].nodeType === 4)) return mkLeaf(`${tag} <span class="v s">${esc(kids[0].nodeValue.trim())}</span>`, path, { kind: "xml", node });
+  const elCount = kids.filter(c => c.nodeType === 1).length;
+  const meta = [attrs.length ? `${attrs.length} öznitelik` : "", elCount ? `${elCount} alt öğe` : ""].filter(Boolean).join(" · ");
+  return mkBranch(tag, meta, path, { kind: "xml", node },
+    () => attrs.map(a => ["@", a]).concat(xChildPaths(node, path).map(x => ["n", x])),
+    ([t, x]) => t === "@" ? mkLeaf(`<span class="k">@${esc(x.name)}</span><span class="meta">=</span> <span class="v s">"${esc(x.value)}"</span>`, `${path}/@${x.name}`, { kind: "xml", attr: x }) : xBuild(x[0], x[1]));
+}
+function runTree() {
+  const st = $("#tr-status"), out = $("#tr-out"), text = $("#tr-in").value, kindEl = $("#tr-kind");
+  TR.map = new Map(); TR.info = new WeakMap(); TR.sel = null; TR.root = null; out.innerHTML = "";
+  $("#tr-path").textContent = "Bir düğüme tıkla"; $("#tr-count").textContent = ""; kindEl.hidden = true; st.hidden = true;
+  if (!text.trim()) { setStatus(st, "", "Soldaki alana JSON veya XML yapıştır."); return; }
+  let root;
+  const isXml = text.trim().startsWith("<");
+  if (!isXml) {
+    const r = parseJSON(text);
+    if (!r.ok) { setStatus(st, "err", "JSON olarak okunamadı · " + errBlock(r, text, "tr-in")); return; }
+    TR.kind = "json"; TR.data = r.value; root = jBuild("$", r.value, "$");
+    let n = 0; (function c(v) { n++; if (v && typeof v === "object") for (const k in v) c(v[k]); })(r.value);
+    $("#tr-count").textContent = `${n.toLocaleString("tr-TR")} düğüm`;
+  } else {
+    const r = parseXML(text);
+    if (!r.ok) { setStatus(st, "err", "XML olarak okunamadı · " + errBlock(r, text, "tr-in")); return; }
+    TR.kind = "xml"; TR.data = r.doc; const de = r.doc.documentElement; root = xBuild(de, "/" + de.nodeName);
+    $("#tr-count").textContent = `${r.doc.getElementsByTagName("*").length.toLocaleString("tr-TR")} öğe`;
+  }
+  kindEl.textContent = TR.kind.toUpperCase(); kindEl.hidden = false;
+  out.appendChild(root); TR.root = root;
+  if (root.tagName === "DETAILS") { root.open = true; showKids(root, CHUNK); }
+}
+function trSelect(el) {
+  if (TR.sel) TR.sel.classList.remove("sel");
+  const row = el.tagName === "DETAILS" ? el.firstElementChild : el;
+  row.classList.add("sel"); TR.sel = row;
+  $("#tr-path").textContent = TR.info.get(el).path;
+}
+function trValue(info) {
+  if (info.kind === "json") return typeof info.val === "string" ? info.val : JSON.stringify(info.val, null, 2);
+  if (info.attr) return info.attr.value;
+  if (info.node.nodeType !== 1) return info.node.nodeValue;
+  return new XMLSerializer().serializeToString(info.node);
+}
+$("#tr-out").addEventListener("click", e => {
+  const row = e.target.closest("summary, .leaf"); if (!row) return;
+  trSelect(row.tagName === "SUMMARY" ? row.parentElement : row);
+});
+$("#tr-copypath").onclick = () => { if (!TR.sel) { toast("Önce bir düğüme tıkla"); return; } copyText($("#tr-path").textContent); };
+$("#tr-copyval").onclick = () => {
+  if (!TR.sel) { toast("Önce bir düğüme tıkla"); return; }
+  const el = TR.sel.tagName === "SUMMARY" ? TR.sel.parentElement : TR.sel; copyText(trValue(TR.info.get(el)));
+};
+$("#tr-expand").onclick = () => {
+  if (!TR.root || TR.root.tagName !== "DETAILS") return;
+  const q = [TR.root]; let n = 0;
+  while (q.length && n < 2000) { const d = q.shift(); if (!d._shown) showKids(d, CHUNK); d.open = true; n++; d.lastElementChild.querySelectorAll(":scope > details").forEach(c => q.push(c)); }
+  if (q.length) toast("Çok büyük: ilk 2.000 dal açıldı");
+};
+$("#tr-collapse").onclick = () => { $$("#tr-out details").forEach(d => { if (d !== TR.root) d.open = false; }); };
+function trSearch() {
+  const q = $("#tr-find").value.trim().toLocaleLowerCase("tr-TR"), st = $("#tr-status");
+  if (!q || !TR.root) { st.hidden = true; return; }
+  const hits = [], has = s => String(s).toLocaleLowerCase("tr-TR").includes(q), LIM = 200;
+  if (TR.kind === "json") {
+    (function w(v, path, chain, label) {
+      if (hits.length >= LIM) return;
+      const t = typeOf(v), keyHit = label != null && has(label);
+      if (t === "object" || t === "array") {
+        if (keyHit) hits.push({ path, chain });
+        if (t === "array") v.forEach((x, i) => { const p = `${path}[${i}]`; w(x, p, chain.concat(p), null); });
+        else Object.keys(v).forEach(k => { const p = keyPath(path, k); w(v[k], p, chain.concat(p), k); });
+      } else if (keyHit || has(v === null ? "null" : v)) hits.push({ path, chain });
+    })(TR.data, "$", ["$"], null);
+  } else {
+    (function w(node, path, chain) {
+      if (hits.length >= LIM) return;
+      if (node.nodeType !== 1) { if (has(node.nodeValue)) hits.push({ path, chain }); return; }
+      if (has(node.nodeName)) hits.push({ path, chain });
+      Array.from(node.attributes).forEach(a => { if (has(a.name) || has(a.value)) { const p = `${path}/@${a.name}`; hits.push({ path: p, chain: chain.concat(p) }); } });
+      const kids = xKids(node);
+      if (!node.attributes.length && kids.length === 1 && kids[0].nodeType !== 1 && kids[0].nodeType !== 8) { if (has(kids[0].nodeValue) && !hits.some(h => h.path === path)) hits.push({ path, chain }); return; }
+      xChildPaths(node, path).forEach(([c, p]) => w(c, p, chain.concat(p)));
+    })(TR.data.documentElement, "/" + TR.data.documentElement.nodeName, ["/" + TR.data.documentElement.nodeName]);
+  }
+  if (!hits.length) { setStatus(st, "", "Eşleşme yok."); return; }
+  TR.hits = hits;
+  setStatus(st, "", `<strong>${hits.length >= LIM ? LIM + "+" : hits.length} eşleşme</strong>` + hits.slice(0, 40).map((h, i) => `<button class="btn" data-hit="${i}" style="margin:6px 6px 0 0;font-family:var(--mono)">${esc(h.path)}</button>`).join(""));
+}
+function trReveal(hit) {
+  for (let i = 0; i < hit.chain.length - 1; i++) { const d = TR.map.get(hit.chain[i]); if (d && d.tagName === "DETAILS") { showKids(d, Infinity); d.open = true; } }
+  const el = TR.map.get(hit.path); if (!el) return;
+  trSelect(el); (el.tagName === "DETAILS" ? el.firstElementChild : el).scrollIntoView({ block: "center" });
+}
+$("#tr-status").addEventListener("click", e => { const b = e.target.closest("[data-hit]"); if (b && TR.hits) trReveal(TR.hits[+b.dataset.hit]); });
+$("#tr-find").addEventListener("input", debounce(trSearch, 300));
+$("#tr-run").onclick = () => { runTree(); trSearch(); };
+$("#tr-in").addEventListener("input", debounce(() => { runTree(); trSearch(); }, 400));
+primary.tree = runTree;
+
+/* ---------- Pano (snippets) ---------- */
+const MAXB = 240 * 1024;
+function guessKind(body) {
+  const t = body.trim(); if (!t) return "";
+  if (/^[\[{]/.test(t)) { try { JSON.parse(t); return "JSON"; } catch {} }
+  if (t.startsWith("<")) { const r = parseXML(t); if (r.ok) return "XML"; }
+  if (/^eyJ[\w-]*\.eyJ[\w-]*\.?[\w-]*$/.test(t)) return "JWT";
+  return "Metin";
+}
+const autoTitle = body => { const l = body.split("\n").map(s => s.trim()).find(Boolean) || "Adsız"; return l.length > 60 ? l.slice(0, 57) + "…" : l; };
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const Pano = {
+  mode: "local", col: null, items: [], cur: null, dirty: false, writing: null, queued: null,
+  els: { list: $("#pano-list"), empty: $("#pano-empty"), title: $("#pano-title"), body: $("#pano-body"), kind: $("#pano-kind"), status: $("#pano-status"), stats: $("#pano-stats"), del: $("#pano-del"), open: $("#pano-open"), search: $("#pano-search") },
+  localLoad() { const v = LS.get("kt:snippets", []); return Array.isArray(v) ? v : []; },
+  sorted() { return this.items.slice().sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0)); },
+  render() {
+    const q = this.els.search.value.trim().toLocaleLowerCase("tr-TR");
+    const list = this.sorted().filter(it => !q || (it.title || "").toLocaleLowerCase("tr-TR").includes(q) || (it.body || "").toLocaleLowerCase("tr-TR").includes(q));
+    this.els.list.innerHTML = list.map(it => `<li><button class="snip" data-id="${esc(it.id)}" aria-current="${it.id === this.cur}"><span class="t">${esc(it.title || "Adsız")}</span><span class="m">${it.kind ? `<span class="chip">${esc(it.kind)}</span>` : ""}<span>${relTime(it.updatedAt || 0)}</span><span>${sizeLabel(enc.encode(it.body || "").length)}</span></span></button></li>`).join("");
+    this.els.empty.hidden = this.items.length > 0;
+    if (this.items.length && !list.length) { this.els.list.innerHTML = '<li class="empty">Aramayla eşleşen kayıt yok.</li>'; }
+    this.els.del.disabled = !this.cur;
+  },
+  editorChanged() {
+    const b = this.els.body.value, k = guessKind(b);
+    this.els.stats.textContent = stats(b);
+    this.els.kind.hidden = !k; this.els.kind.textContent = k;
+    this.els.open.hidden = !["JSON", "XML", "JWT"].includes(k);
+    this.els.open.textContent = k ? `${k} aracında aç` : "Araçta aç";
+  },
+  load(it) {
+    this.cur = it ? it.id : null; this.dirty = false;
+    this.els.title.value = it ? it.title || "" : ""; this.els.body.value = it ? it.body || "" : "";
+    this.els.status.textContent = it ? `Kaydedildi · ${fmtTime(it.updatedAt)}` : "Kaydedilmedi";
+    this.editorChanged(); this.render(); this.disarm();
+  },
+  async save(now) {
+    const body = this.els.body.value;
+    if (!body.trim()) { if (now) toast("Boş parça kaydedilmez"); return; }
+    if (enc.encode(body).length > MAXB) { this.els.status.textContent = "Çok büyük: en fazla 240 KB"; toast("Bu parça kaydedilemeyecek kadar büyük (en fazla 240 KB)"); return; }
+    const id = this.cur || newId(); this.cur = id;
+    const item = { id, title: this.els.title.value.trim() || autoTitle(body), body, kind: guessKind(body), updatedAt: Date.now() };
+    const i = this.items.findIndex(x => x.id === id); if (i >= 0) this.items[i] = item; else this.items.push(item);
+    this.dirty = false; this.render();
+    await this.persist(item);
+  },
+  async persist(item) {
+    if (this.mode === "cloud") {
+      if (this.writing) { this.queued = item; this.els.status.textContent = "Kaydediliyor…"; return; }
+      this.els.status.textContent = "Kaydediliyor…";
+      const { id, title, body, kind } = item;
+      this.writing = fetch("/api/snippets/" + encodeURIComponent(id), { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title, body, kind }) })
+        .then(async r => {
+          const j = await r.json().catch(() => ({}));
+          if (!r.ok) throw new Error(j.error || `Sunucu ${r.status} döndü`);
+          const i = this.items.findIndex(x => x.id === id); if (i >= 0) this.items[i] = Object.assign({}, this.items[i], { updatedAt: j.updatedAt || item.updatedAt });
+          if (this.cur === id && !this.dirty) this.els.status.textContent = `Sunucuya kaydedildi · ${fmtTime(j.updatedAt || item.updatedAt)}`;
+          this.render();
+        })
+        .catch(e => { const msg = "Kaydedilemedi: " + (e.message === "Failed to fetch" ? "sunucuya ulaşılamadı" : e.message); this.els.status.textContent = msg; toast(msg); this.dirty = true; })
+        .finally(() => { this.writing = null; if (this.queued) { const q = this.queued; this.queued = null; this.persist(q); } });
+      return this.writing;
+    }
+    LS.set("kt:snippets", this.items);
+    this.els.status.textContent = `Bu tarayıcıya kaydedildi · ${fmtTime(item.updatedAt)}`;
+  },
+  async remove() {
+    const id = this.cur; if (!id) return;
+    if (this.mode === "cloud") {
+      try { const r = await fetch("/api/snippets/" + encodeURIComponent(id), { method: "DELETE" }); if (!r.ok) throw 0; }
+      catch { toast("Silinemedi, tekrar dene"); return; }
+    }
+    this.items = this.items.filter(x => x.id !== id);
+    if (this.mode !== "cloud") LS.set("kt:snippets", this.items);
+    this.load(null); toast("Silindi");
+  },
+  armT: null,
+  arm() { const b = this.els.del; if (b.classList.contains("armed")) { this.disarm(); this.remove(); return; } b.classList.add("armed"); b.textContent = "Silmek için tekrar tıkla"; clearTimeout(this.armT); this.armT = setTimeout(() => this.disarm(), 3500); },
+  disarm() { const b = this.els.del; b.classList.remove("armed"); b.textContent = "Sil"; clearTimeout(this.armT); },
+  async quickSave(text, kind) {
+    if (!text || !text.trim()) { toast("Kaydedilecek çıktı yok"); return; }
+    if (enc.encode(text).length > MAXB) { toast("Çıktı panoya sığmayacak kadar büyük (en fazla 240 KB)"); return; }
+    const item = { id: newId(), title: `${kind || "Metin"} çıktısı · ${fmtTime(Date.now())}`, body: text, kind: guessKind(text), updatedAt: Date.now() };
+    this.items.push(item); this.render(); await this.persist(item); toast("Panoya kaydedildi");
+  },
+  setPill(mode) {
+    const p = $("#sync"); p.className = "pill " + mode;
+    p.lastElementChild.textContent = mode === "cloud" ? "Pano sunucuya kaydediliyor" : "Pano yalnızca bu tarayıcıda";
+    p.title = mode === "cloud" ? "Kayıtlar sunucuda durur; bu adresi açtığın her bilgisayardan erişirsin." : "Sunucuya ulaşılamadı; kayıtlar bu tarayıcıda tutuluyor.";
+  },
+  async refresh() {
+    if (this.mode !== "cloud" || this.dirty || this.writing) return;
+    try {
+      const r = await fetch("/api/snippets", { cache: "no-store" }); if (!r.ok) return;
+      this.items = await r.json();
+      if (this.cur) {
+        const it = this.items.find(x => x.id === this.cur);
+        const focused = document.activeElement === this.els.body || document.activeElement === this.els.title;
+        if (!it) this.load(null);
+        else if (!focused && (it.body !== this.els.body.value || it.title !== this.els.title.value)) { this.els.title.value = it.title || ""; this.els.body.value = it.body || ""; this.editorChanged(); }
+      }
+      this.render();
+    } catch {}
+  },
+  async connect() {
+    this.load(null);
+    try {
+      const r = await fetch("/api/snippets", { cache: "no-store" });
+      if (!r.ok) throw 0;
+      this.items = await r.json(); this.mode = "cloud"; this.setPill("cloud");
+    } catch { this.mode = "local"; this.items = this.localLoad(); this.setPill("local"); }
+    this.render();
+    document.addEventListener("visibilitychange", () => { if (!document.hidden) this.refresh(); });
+  },
+  migrate() {}
+};
+const autosave = debounce(() => { if (Pano.dirty) Pano.save(false); }, 1000);
+["title", "body"].forEach(k => Pano.els[k].addEventListener("input", () => { Pano.dirty = true; Pano.els.status.textContent = "Değişiklikler kaydedilmedi"; Pano.editorChanged(); autosave(); }));
+Pano.els.list.addEventListener("click", e => { const b = e.target.closest(".snip"); if (!b) return; if (Pano.dirty) Pano.save(false); const it = Pano.items.find(x => x.id === b.dataset.id); Pano.load(it); });
+Pano.els.search.addEventListener("input", () => Pano.render());
+$("#pano-new").onclick = () => { if (Pano.dirty) Pano.save(false); Pano.load(null); Pano.els.body.focus(); };
+$("#pano-save").onclick = () => Pano.save(true);
+$("#pano-copy").onclick = () => copyText(Pano.els.body.value, Pano.els.body);
+$("#pano-del").onclick = () => Pano.arm();
+$("#pano-open").onclick = () => {
+  const k = guessKind(Pano.els.body.value), v = Pano.els.body.value;
+  const target = { JSON: ["json-in", "json"], XML: ["xml-in", "xml"], JWT: ["jwt-in", "jwt"] }[k]; if (!target) return;
+  const ta = document.getElementById(target[0]); ta.value = v; ta.dispatchEvent(new Event("input")); showTab(target[1]);
+  ({ json: () => runJSON("fmt"), xml: () => runXML("fmt"), jwt: runJWT })[target[1]]();
+};
+document.addEventListener("keydown", e => { if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "s" && !$("#t-pano").hidden) { e.preventDefault(); Pano.save(true); } });
+setInterval(() => { if (!$("#t-pano").hidden && !Pano.els.search.matches(":focus")) Pano.render(); }, 60000);
+
+/* ---------- samples & start ---------- */
+const now = Math.floor(Date.now() / 1000);
+const b64u = o => bytesToB64(enc.encode(JSON.stringify(o))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+const SAMPLES = {
+  "json-in": '{"siparisNo":"SP-2026-10418","tarih":"2026-10-08T14:32:00+03:00","musteri":{"ad":"Ayşe Demir","sehir":"İzmir"},"kalemler":[{"sku":"KLV-204","adet":2,"birimFiyat":349.9},{"sku":"MSE-118","adet":1,"birimFiyat":129.5}],"odendi":true,"kargo":null}',
+  "jc-a": JSON.stringify({ siparisNo: "SP-2026-10418", musteri: { ad: "Ayşe Demir", sehir: "İzmir" }, kalemler: [{ sku: "KLV-204", adet: 2 }, { sku: "MSE-118", adet: 1 }], odendi: false, kargo: null }, null, 2),
+  "jc-b": JSON.stringify({ musteri: { sehir: "Ankara", ad: "Ayşe Demir" }, siparisNo: "SP-2026-10418", kalemler: [{ sku: "KLV-204", adet: 3 }, { sku: "MSE-118", adet: 1 }, { sku: "USB-031", adet: 4 }], odendi: true, kupon: "EKIM10" }, null, 2),
+  "xml-in": '<?xml version="1.0" encoding="UTF-8"?><Fatura no="FT-2026-0912" tarih="2026-10-08"><!-- örnek kayıt --><Satici vkn="1111111111">Örnek Ticaret A.Ş.</Satici><Alici vkn="2222222222">Deneme Ltd.</Alici><Kalemler><Kalem kod="KLV-204" adet="2" birim="349.90"/><Kalem kod="MSE-118" adet="1" birim="129.50"/></Kalemler><Toplam para="TRY">829.30</Toplam></Fatura>',
+  "xc-a": '<Fatura no="FT-2026-0912" tarih="2026-10-08">\n  <Satici vkn="1111111111">Örnek Ticaret A.Ş.</Satici>\n  <Kalemler>\n    <Kalem kod="KLV-204" adet="2" birim="349.90"/>\n    <Kalem kod="MSE-118" adet="1" birim="129.50"/>\n  </Kalemler>\n  <Toplam para="TRY">829.30</Toplam>\n</Fatura>',
+  "xc-b": '<Fatura tarih="2026-10-08" no="FT-2026-0912"><Satici vkn="1111111111">Örnek Ticaret A.Ş.</Satici><Kalemler><Kalem kod="KLV-204" adet="3" birim="349.90"/><Kalem kod="MSE-118" adet="1" birim="129.50"/><Kalem kod="USB-031" adet="4" birim="89.00"/></Kalemler><Toplam para="TRY">1535.20</Toplam></Fatura>',
+  "tc-a": "server:\n  port: 8080\n  host: 0.0.0.0\nlogging:\n  level: info\n  file: /var/log/app.log\ncache:\n  enabled: true\n  ttl: 300",
+  "tc-b": "server:\n  port: 8443\n  host: 0.0.0.0\n  tls: true\nlogging:\n  level: debug\n  file: /var/log/app.log\ncache:\n  enabled: true\n  ttl: 300",
+  "enc-plain": "https://ornek.com/ara?q=çay & şeker",
+  "jwt-in": b64u({ alg: "HS256", typ: "JWT" }) + "." + b64u({ sub: "kullanici-1042", iss: "ornek-kimlik", iat: now - 1800, exp: now + 1800 }) + ".ornek-imza",
+  "hash-in": "Merhaba dünya",
+  "bt-in": "select s.SiparisNo, m.Ad, sum(k.Adet*k.BirimFiyat) as Toplam from Siparis s join Musteri m on m.Id=s.MusteriId join Kalem k on k.SiparisId=s.Id where s.Tarih>='2026-10-01' and m.Sehir in ('İzmir','Ankara') group by s.SiparisNo, m.Ad having sum(k.Adet*k.BirimFiyat)>500 order by Toplam desc",
+  "tr-in": JSON.stringify({ siparisNo: "SP-2026-10418", musteri: { ad: "Ayşe Demir", sehir: "İzmir", etiketler: ["kurumsal", "öncelikli"] }, kalemler: [{ sku: "KLV-204", adet: 2, birimFiyat: 349.9 }, { sku: "MSE-118", adet: 1, birimFiyat: 129.5 }], odendi: true, kargo: null }, null, 2)
+};
+$$("textarea[data-draft]").forEach(ta => {
+  const d = LS.get("kt:draft:" + ta.id, null);
+  if (d !== null) { ta.value = d; markEdited(ta.id); } else if (SAMPLES[ta.id] != null) ta.value = SAMPLES[ta.id];
+  else markEdited(ta.id);
+});
+$$("[data-stats-for]").forEach(f => updStats(f.dataset.statsFor));
+$("#jc-arrorder").checked = false;
+setJcView(jcView);
+runJSON("fmt"); runXML("fmt"); runXC(); runTC(); runEnc("enc"); runJWT(); runHash(); runTree();
+document.addEventListener("DOMContentLoaded", runBeauty);
+$$("[data-stats-for]").forEach(f => updStats(f.dataset.statsFor));
+const h = (location.hash || "").slice(1);
+showTab(TABS.includes(h) ? h : LS.get("kt:tab", "pano"));
+window.addEventListener("hashchange", () => { const t = location.hash.slice(1); if (TABS.includes(t)) showTab(t); });
+Pano.setPill("local"); $("#sync").lastElementChild.textContent = "Depolama kontrol ediliyor";
+Pano.connect();
+})();
+</script>
+</body>
+</html>
