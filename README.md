@@ -23,4 +23,4 @@ AUTH_DISABLED=1 DATA_DIR=./data node server.js
 
 ## Coolify
 
-Public Repository → Build Pack: Dockerfile → port 3000. `APP_PASSWORD` ortam değişkenini ekle ve `/data` için kalıcı depolama tanımla.
+Public Repository → Build Pack: Docker Compose (`/docker-compose.yml`). Coolify `APP_PASSWORD` için `SERVICE_PASSWORD_APP` değerini kendisi üretir; `/data` adlandırılmış bir volume'de kalır. `app` servisine domain'i iç port 3000 ile ver (`https://alan.adi:3000`).

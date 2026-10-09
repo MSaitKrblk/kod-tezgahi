@@ -1,0 +1,19 @@
+services:
+  app:
+    build: .
+    environment:
+      - SERVICE_FQDN_APP_3000
+      - APP_USER=admin
+      - APP_PASSWORD=${SERVICE_PASSWORD_APP}
+    volumes:
+      - kod-tezgahi-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  kod-tezgahi-data:
